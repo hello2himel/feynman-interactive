@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Feynman Vol. I · Interactive</title>
+    <script type="module" crossorigin src="/assets/index-xO6QomFj.js"></script>
+    <link rel="stylesheet" crossorigin href="/assets/index-ewuw3MON.css">
+  </head>
+  <body>
+    <header class="bar">
+      <div class="brand">Feynman Lectures <span>Vol. I</span></div>
+      <select id="chapter" aria-label="Chapter"></select>
+      <select id="section" aria-label="Section"></select>
+      <div class="spacer"></div>
+      <span id="pagelabel" class="muted"></span>
+      <button id="hold" aria-pressed="false" title="Keep the current demo while you scroll (H)">Hold demo</button>
+      <button id="help-btn" title="Keyboard shortcuts">?</button>
+    </header>
+
+    <main class="split">
+      <section id="stage" aria-label="Interactive demo">
+        <div class="stage-head">
+          <div id="demo-title"></div>
+          <div id="demo-note"></div>
+        </div>
+        <div id="canvas-wrap">
+          <div id="labels"></div>
+          <div id="predict" hidden></div>
+        </div>
+        <div class="stage-foot">
+          <div class="transport">
+            <button id="play">Pause</button>
+            <button id="reset">Restart</button>
+            <button id="restore" hidden title="Undo your slider changes and return to the values for this part of the text">Back to text values</button>
+            <span class="spacer"></span>
+            <button id="prev-cue" title="Previous demo point (K)">↑</button>
+            <button id="next-cue" title="Next demo point (J)">↓</button>
+          </div>
+          <div id="controls"></div>
+          <div id="panel"></div>
+        </div>
+      </section>
+
+      <div id="divider" role="separator" aria-orientation="vertical" title="Drag to resize"></div>
+
+      <section id="reader" aria-label="Lecture text">
+        <div id="read-line" aria-hidden="true"></div>
+        <div id="column"></div>
+        <div id="missing" hidden>
+          <h2>PDF not found</h2>
+          <p>Run <code>python3 scripts/extract_pdf.py ~/Downloads/feynman-lectures.pdf</code> to create <code>public/vol1.pdf</code>, then reload.</p>
+        </div>
+      </section>
+    </main>
+
+    <dialog id="help">
+      <h3>Shortcuts</h3>
+      <dl>
+        <dt>J / K</dt><dd>Next / previous demo point in the text</dd>
+        <dt>Space</dt><dd>Play / pause the demo</dd>
+        <dt>R</dt><dd>Restart the demo</dd>
+        <dt>H</dt><dd>Hold the current demo while scrolling</dd>
+        <dt>Drag / scroll on demo</dt><dd>Pan · zoom (2D) or orbit · zoom (3D)</dd>
+      </dl>
+      <p class="muted">The marks in the left margin of the pages show where a demo changes. Click one to jump there.</p>
+      <form method="dialog"><button>Close</button></form>
+    </dialog>
+
+  </body>
+</html>

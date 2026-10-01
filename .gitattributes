@@ -33,3 +33,7 @@ saved_model/**/* filter=lfs diff=lfs merge=lfs -text
 *.zip filter=lfs diff=lfs merge=lfs -text
 *.zst filter=lfs diff=lfs merge=lfs -text
 *tfevents* filter=lfs diff=lfs merge=lfs -text
+site/pdfjs/standard_fonts/LiberationSans-Bold.ttf filter=lfs diff=lfs merge=lfs -text
+site/pdfjs/standard_fonts/LiberationSans-BoldItalic.ttf filter=lfs diff=lfs merge=lfs -text
+site/pdfjs/standard_fonts/LiberationSans-Italic.ttf filter=lfs diff=lfs merge=lfs -text
+site/pdfjs/standard_fonts/LiberationSans-Regular.ttf filter=lfs diff=lfs merge=lfs -text

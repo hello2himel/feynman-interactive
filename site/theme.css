@@ -1150,3 +1150,17 @@ button svg.ri:not(:last-child) {
     display: none;
   }
 }
+
+/* ---- brand mark (mirror logo, currentColor -> accent) ---- */
+.brand {
+  display: flex;
+  align-items: center;
+}
+
+.brand-mark {
+  width: 1.5em;
+  height: 1.5em;
+  flex: none;
+  margin-right: 0.35em;
+  color: var(--accent);
+}

@@ -15,6 +15,7 @@ Structural patches (fail loudly if anchors vanish):
   6. Mirror-owned missing-PDF guidance + retry button.
   7. Orphan-demo banner slot + cue counter + polite live region.
      Explicit × close button as the dialog's first child.
+     Brand mark (mirror logo) + favicon links.
 
 Cosmetic upstream-text patches (skipped silently when upstream rewords):
   8. "?" help button -> italic serif "i" (+ labels).
@@ -186,6 +187,26 @@ def apply_patch() -> bool:
             html, '      <div id="demo-note"></div>', '      <div id="demo-note"></div>\n' + ORPHAN_HTML.rstrip("\n")
         )
         changed |= c
+
+    # 7d. brand mark (mirror logo) as the first child of .brand.
+    if 'brand-mark' not in html:
+        m = re.search(r'(<div class="brand">)', html)
+        if m:
+            mark = open(os.path.join(ROOT, "scripts", "brandmark.svg"), encoding="utf-8").read().strip()
+            html = html[: m.end(1)] + mark + " " + html[m.end(1):]
+            changed = True
+
+    # 7e. favicon links before the theme stylesheet.
+    if "favicon.svg" not in html:
+        anchor = "\n" + THEME_CSS_LINE
+        if anchor not in html:
+            raise SystemExit("theme_patch: theme.css link not found in site/index.html")
+        favicons = (
+            '\n    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />'
+            '\n    <link rel="alternate icon" href="/favicon.png" />'
+        )
+        html = html.replace(anchor, favicons + anchor, 1)
+        changed = True
 
     # 7c. explicit × close button as the dialog's first child.
     if 'id="help-close"' not in html:

@@ -41,6 +41,8 @@ KEEP = {
     "site/theme.css",
     "site/theme.js",
     "site/fonts",
+    "site/favicon.svg",
+    "site/favicon.png",
 }
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))

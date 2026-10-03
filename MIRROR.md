@@ -79,6 +79,11 @@ drawer with kicker sections. Desktop order is restored on resize. All in
 go icon-only under 800 px (labels kept in the roomier drawer and everywhere
 on desktop).
 
+**Logo** — the pinwheel mark lives in the header (inline SVG,
+`currentColor` → accent in both modes) with themed `favicon.svg` (embedded
+light/dark) + PNG fallback. Sources: `scripts/brandmark.svg`,
+`site/favicon.svg`. The amber app icon wasn't used (off-palette).
+
 **Interaction layer** (`site/theme.js`, progressive enhancement only):
 keyboard-operable divider (arrows, double-click resets), cue counter with
 disabled ends + polite position announcements, slider value exposure for

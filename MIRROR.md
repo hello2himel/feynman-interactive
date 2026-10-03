@@ -72,6 +72,15 @@ payload): theme states, cue arrows, info, menu/close, play/pause (mirrored
 through the bundle's label toggles), restart, restore, hold. Text labels are
 kept everywhere for screen readers and clarity.
 
+**Boot preloader** — `Feynote` wordmark + `Learn the way Richard Feynman
+intended.`, set in the site fonts and both color schemes, injected pre-paint
+by `theme.js` and lifted when the first demo mounts (fonts + 6 s absolute
+caps so it can never trap the page).
+
+**Calm demo switching** — paper-toned canvas gap with a `Preparing demo…`
+placeholder instead of white flash, a 0.25 s content fade on cue changes,
+and chapter changes scroll back to the stage on phones.
+
 **View modes** — a bottom Split / Book / Playground switch (sticky bar on
 phones, floating pill on desktop, `body[data-mview]`, persisted): Book hides
 the stage, Playground hides the reader and grows the canvas. Default Split

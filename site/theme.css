@@ -1805,3 +1805,121 @@ body[data-mview="lab"] #divider {
     display: none !important;
   }
 }
+
+/* ---- boot preloader: Feynote wordmark, book dress, both modes ---- */
+#loader {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  background: var(--paper);
+  color: var(--ink);
+  text-align: center;
+  padding: 24px;
+  transition: opacity 0.4s ease;
+}
+
+#loader.done {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.loader-word {
+  font: 600 44px/1.1 var(--display);
+  font-variant: small-caps;
+  letter-spacing: 0.06em;
+}
+
+.loader-rule {
+  width: 120px;
+  height: 1px;
+  background: var(--rule);
+  position: relative;
+  overflow: visible;
+}
+
+.loader-rule::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 9px;
+  height: 9px;
+  background: var(--paper);
+  border: 1.5px solid var(--accent);
+  transform: translate(-50%, -50%) rotate(45deg);
+  animation: loader-pulse 1.6s ease-in-out infinite;
+}
+
+@keyframes loader-pulse {
+  0%,
+  100% {
+    opacity: 0.45;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+.loader-tag {
+  font: italic 17px/1.6 var(--serif);
+  color: var(--ink-2);
+  margin: 0;
+  max-width: 34ch;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #loader {
+    transition: none;
+  }
+
+  #loader.done {
+    display: none;
+  }
+
+  .loader-rule::before {
+    animation: none;
+    opacity: 1;
+  }
+}
+
+/* ---- demo swap: paper-toned gap, gentle content fade ---- */
+#canvas-wrap {
+  background: var(--paper-2);
+}
+
+#canvas-wrap:not(:has(canvas))::after {
+  content: "Preparing demo\2026";
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font: italic 15px/1.5 var(--serif);
+  color: var(--ink-2);
+}
+
+.stage-head.swap-in #demo-title,
+.stage-head.swap-in #demo-note {
+  animation: swap-in 0.25s ease;
+}
+
+@keyframes swap-in {
+  from {
+    opacity: 0.25;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .stage-head.swap-in #demo-title,
+  .stage-head.swap-in #demo-note {
+    animation: none;
+  }
+}

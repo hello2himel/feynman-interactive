@@ -239,8 +239,21 @@ function riIcon(name) {
       }
       if (prev) prev.disabled = active <= 0;
       if (next) next.disabled = active >= marks.length - 1;
-      if (live && active >= 0 && updateCues.last !== active) {
+      if (active >= 0 && updateCues.last !== active) {
         updateCues.last = active;
+        try {
+          var sh = document.querySelector(".stage-head");
+          if (sh) {
+            sh.classList.remove("swap-in");
+            void sh.offsetWidth;
+            sh.classList.add("swap-in");
+          }
+        } catch (e) {
+          /* ignore */
+        }
+      }
+      if (live && active >= 0 && updateCues.shown !== active) {
+        updateCues.shown = active;
         var note = marks[active].getAttribute("aria-label") || "";
         live.textContent =
           "Demo " + (active + 1) + " of " + marks.length + (note ? ": " + note : "");
@@ -811,13 +824,34 @@ function riIcon(name) {
       /* ignore */
     }
 
-    /* Choosing a chapter/section is terminal: record, then close behind it. */
+    /* Choosing a chapter/section is terminal: record, close behind it,
+     * and bring the demo back into view on phones. */
     [chapterSel, sectionSel].forEach(function (sel) {
       if (sel)
         sel.addEventListener("change", function () {
           recordRecent();
           if (opened) closeNav(false);
           openBtn.focus();
+          try {
+            if (
+              window.matchMedia &&
+              window.matchMedia("(max-width: 800px)").matches
+            ) {
+              var split = document.querySelector("main.split");
+              var stage = document.querySelector("main.split section#stage");
+              var reduce =
+                window.matchMedia &&
+                window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+              if (split && stage) {
+                split.scrollTo({
+                  top: stage.offsetTop,
+                  behavior: reduce ? "auto" : "smooth",
+                });
+              }
+            }
+          } catch (e) {
+            /* ignore */
+          }
         });
     });
 
@@ -1125,4 +1159,91 @@ function riIcon(name) {
     split.appendChild(bar);
     setView(stored(), true);
   });
+})();
+
+/* Boot preloader: injected pre-paint (this file runs synchronously in
+ * <head>), removed once the first demo is mounted. Absolute timeouts make
+ * sure it can never trap the page if the bundle or fonts stall. */
+(function () {
+  "use strict";
+
+  var T0 = performance.now();
+  var el = document.createElement("div");
+  el.id = "loader";
+  el.setAttribute("role", "status");
+  el.setAttribute("aria-label", "Loading Feynote");
+  var word = document.createElement("div");
+  word.className = "loader-word";
+  word.textContent = "Feynote";
+  var rule = document.createElement("div");
+  rule.className = "loader-rule";
+  rule.setAttribute("aria-hidden", "true");
+  var tag = document.createElement("p");
+  tag.className = "loader-tag";
+  tag.textContent = "Learn the way Richard Feynman intended.";
+  el.appendChild(word);
+  el.appendChild(rule);
+  el.appendChild(tag);
+  (document.documentElement || document).appendChild(el);
+
+  var gone = false;
+  function hide() {
+    if (gone) return;
+    gone = true;
+    el.classList.add("done");
+    setTimeout(function () {
+      if (el.parentNode) el.parentNode.removeChild(el);
+    }, 500);
+  }
+  window.__hideLoader = hide;
+
+  function contentReady() {
+    try {
+      var title = document.getElementById("demo-title");
+      if (!title || !title.textContent.trim()) return false;
+      return !!(
+        document.querySelector("#canvas-wrap canvas") ||
+        (document.getElementById("missing") &&
+          !document.getElementById("missing").hidden)
+      );
+    } catch (e) {
+      return false;
+    }
+  }
+
+  function waitFonts(done) {
+    var to = false;
+    var timer = setTimeout(function () {
+      to = true;
+      done();
+    }, 1200);
+    try {
+      if (document.fonts && document.fonts.ready) {
+        document.fonts.ready.then(function () {
+          if (!to) {
+            clearTimeout(timer);
+            done();
+          }
+        });
+        return;
+      }
+    } catch (e) {
+      /* ignore */
+    }
+    clearTimeout(timer);
+    done();
+  }
+
+  /* Absolute cap: never trap the page. */
+  setTimeout(hide, Math.max(1500, 6000 - (performance.now() - T0)));
+
+  var poll = setInterval(function () {
+    if (contentReady()) {
+      clearInterval(poll);
+      waitFonts(hide);
+    } else if (performance.now() - T0 > 5500) {
+      clearInterval(poll);
+      hide();
+    }
+  }, 120);
 })();

@@ -547,7 +547,7 @@ function riIcon(name) {
       });
     }
     var syncOrphan = function () {
-      if (missing && orphan && !missing.hidden) orphan.hidden = false;
+      if (missing && orphan) orphan.hidden = missing.hidden;
       try {
         document.documentElement.classList.toggle(
           "m-nobook",

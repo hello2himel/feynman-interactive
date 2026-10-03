@@ -242,12 +242,19 @@ function riIcon(name) {
         live.textContent =
           "Demo " + (active + 1) + " of " + marks.length + (note ? ": " + note : "");
       }
+      if (window.__mirrorCues) {
+        try {
+          window.__mirrorCues(marks, active);
+        } catch (e) {
+          /* ignore */
+        }
+      }
     };
     updateCues.last = -2;
     if (column && (prev || next || count || live) && window.MutationObserver) {
       var queued = false;
       var mo = new MutationObserver(function () {
-        if (queued) return;
+        if (queued || document.hidden) return;
         queued = true;
         setTimeout(function () {
           queued = false;
@@ -256,7 +263,7 @@ function riIcon(name) {
           } catch (e) {
             /* ignore */
           }
-        }, 120);
+        }, 250);
       });
       mo.observe(column, {
         childList: true,
@@ -290,7 +297,19 @@ function riIcon(name) {
         for (var i = 0; i < ths.length; i++) ths[i].setAttribute("scope", "col");
       };
       scopeTables();
-      new MutationObserver(scopeTables).observe(panel, {
+      var scopeQueued = false;
+      new MutationObserver(function () {
+        if (scopeQueued || document.hidden) return;
+        scopeQueued = true;
+        setTimeout(function () {
+          scopeQueued = false;
+          try {
+            scopeTables();
+          } catch (e) {
+            /* ignore */
+          }
+        }, 150);
+      }).observe(panel, {
         childList: true,
         subtree: true,
       });
@@ -360,13 +379,57 @@ function riIcon(name) {
     var missing = $("missing");
     var orphan = $("demo-orphan");
     var retry = $("retry-pdf");
+    var retryStatus = $("retry-status");
     if (retry) {
       retry.addEventListener("click", function () {
-        window.location.reload();
+        retry.disabled = true;
+        if (retryStatus) retryStatus.textContent = "Checking for pages…";
+        var done = function (found) {
+          if (found) {
+            window.location.reload();
+            return;
+          }
+          if (retryStatus) {
+            retryStatus.textContent =
+              "Still no pages — check your connection, or add your own PDF below.";
+          }
+          retry.disabled = false;
+        };
+        try {
+          fetch("vol1.pdf", { method: "HEAD", cache: "no-store" }).then(
+            function (r) {
+              done(r && r.ok);
+            },
+            function () {
+              done(false);
+            }
+          );
+        } catch (e) {
+          done(false);
+        }
+      });
+    }
+    var browseDemos = $("browse-demos");
+    if (browseDemos) {
+      browseDemos.addEventListener("click", function () {
+        var opener = $("mnav-open");
+        if (opener && getComputedStyle(opener).display !== "none") opener.click();
+        else {
+          var c = $("chapter");
+          if (c) c.focus();
+        }
       });
     }
     var syncOrphan = function () {
       if (missing && orphan && !missing.hidden) orphan.hidden = false;
+      try {
+        document.documentElement.classList.toggle(
+          "m-nobook",
+          !!(missing && !missing.hidden)
+        );
+      } catch (e) {
+        /* ignore */
+      }
     };
     syncOrphan();
     /* The bundle unhides #missing asynchronously after the PDF fetch fails,
@@ -378,14 +441,16 @@ function riIcon(name) {
       });
     }
 
-    /* ---------- one-time first-visit hint ---------- */
+    /* ---------- one-time first-visit hint (desktop: J/K/H copy) ---------- */
     var seen = null;
     try {
       seen = window.localStorage.getItem("feynman-hint-seen");
     } catch (e) {
       seen = "yes";
     }
-    if (!seen) {
+    var isMobileHint =
+      window.matchMedia && window.matchMedia("(max-width: 800px)").matches;
+    if (!seen && !isMobileHint) {
       var head = document.querySelector(".stage-head");
       if (head) {
         var hint = document.createElement("p");
@@ -470,10 +535,18 @@ function riIcon(name) {
     if (prev) {
       prev.innerHTML = "";
       prev.appendChild(riIcon("arrow-up"));
+      var pl = document.createElement("span");
+      pl.className = "btn-label";
+      pl.textContent = "Prev";
+      prev.appendChild(pl);
     }
     if (next) {
       next.innerHTML = "";
       next.appendChild(riIcon("arrow-down"));
+      var nl = document.createElement("span");
+      nl.className = "btn-label";
+      nl.textContent = "Next";
+      next.appendChild(nl);
     }
     var help = $("help-btn");
     if (help) {
@@ -503,18 +576,22 @@ function riIcon(name) {
       });
     }
 
-    /* ---------- drawer skeleton ---------- */
+    /* ---------- bottom sheet (chapters, demos, display, about) ----------
+     * Replaces the old right-side drawer on mobile: same node-moving design
+     * (real selects/buttons keep bundle listeners), plus a cue list with
+     * direct jump, recent chapters, and a sticky cue bar. Theme + pagelabel
+     * stay in the header on mobile. */
     var scrim = document.createElement("div");
     scrim.id = "mnav-scrim";
     var nav = document.createElement("nav");
     nav.id = "mnav";
-    nav.setAttribute("aria-label", "Chapters and display");
+    nav.setAttribute("aria-label", "Chapters, demos and display");
     nav.setAttribute("inert", "");
     var head = document.createElement("div");
     head.className = "mnav-head";
     var title = document.createElement("span");
     title.className = "mnav-title";
-    title.textContent = "Menu";
+    title.textContent = "Chapters & demos";
     var close = document.createElement("button");
     close.id = "mnav-close";
     close.type = "button";
@@ -524,23 +601,42 @@ function riIcon(name) {
     head.appendChild(close);
     nav.appendChild(head);
 
-    var groups = { chapters: [], display: [], about: [] };
     var chapterSel = $("chapter");
     var sectionSel = $("section");
-    var chapterLabel = bar.querySelector('label[for="chapter"]');
-    var sectionLabel = bar.querySelector('label[for="section"]');
+    var bar = document.querySelector("header.bar");
+    var chapterLabel = bar ? bar.querySelector('label[for="chapter"]') : null;
+    var sectionLabel = bar ? bar.querySelector('label[for="section"]') : null;
+
+    var recentWrap = document.createElement("div");
+    recentWrap.id = "mnav-recent";
+    recentWrap.className = "mnav-recent";
+    recentWrap.setAttribute("aria-label", "Recent chapters");
+    recentWrap.hidden = true;
+
+    var cueList = document.createElement("div");
+    cueList.id = "m-cue-list";
+    cueList.setAttribute("role", "list");
+    cueList.setAttribute("aria-label", "Demo points in this section");
+    var cueEmpty = document.createElement("p");
+    cueEmpty.className = "m-cue-empty";
+    cueEmpty.textContent = "Demo points appear here once pages load.";
+    cueList.appendChild(cueEmpty);
+
+    var groups = { chapters: [], demos: [], display: [], about: [] };
     if (chapterLabel) groups.chapters.push(chapterLabel);
     if (chapterSel) groups.chapters.push(chapterSel);
     if (sectionLabel) groups.chapters.push(sectionLabel);
     if (sectionSel) groups.chapters.push(sectionSel);
     if ($("hold")) groups.display.push($("hold"));
-    if ($("theme")) groups.display.push($("theme"));
     if ($("help-btn")) groups.about.push($("help-btn"));
-    if ($("pagelabel")) groups.about.push($("pagelabel"));
 
-    var kickers = { chapters: "Chapters", display: "Display", about: "About" };
+    var kickers = {
+      chapters: "Chapters",
+      demos: "Demos in this section",
+      display: "Display",
+      about: "About",
+    };
     Object.keys(groups).forEach(function (k) {
-      if (!groups[k].length) return;
       var g = document.createElement("div");
       g.className = "mnav-group";
       var h = document.createElement("div");
@@ -553,6 +649,10 @@ function riIcon(name) {
       g.appendChild(row);
       nav.appendChild(g);
     });
+    var chaptersRow = nav.querySelector('[data-slot="chapters"]');
+    if (chaptersRow) chaptersRow.appendChild(recentWrap);
+    var demosRow = nav.querySelector('[data-slot="demos"]');
+    if (demosRow) demosRow.appendChild(cueList);
 
     var openBtn = document.createElement("button");
     openBtn.id = "mnav-open";
@@ -562,15 +662,66 @@ function riIcon(name) {
     openBtn.setAttribute("aria-controls", "mnav");
     openBtn.appendChild(riIcon("menu"));
 
+    /* ---------- sticky mobile cue bar (real transport nodes) ---------- */
+    var stage = document.querySelector("main.split section#stage");
+    var transport = document.querySelector(".transport");
+    var cuebar = document.createElement("div");
+    cuebar.id = "m-cuebar";
+    cuebar.setAttribute("role", "group");
+    cuebar.setAttribute("aria-label", "Demo points");
+    if (stage) stage.appendChild(cuebar);
+
+    /* ---------- quiz bottom sheet (real #predict node) ---------- */
+    var quizScrim = document.createElement("div");
+    quizScrim.id = "quiz-scrim";
+    var quizSheet = document.createElement("section");
+    quizSheet.id = "quiz-sheet";
+    quizSheet.setAttribute("aria-label", "Make a guess");
+    var quizHandle = document.createElement("div");
+    quizHandle.className = "sheet-handle";
+    quizHandle.setAttribute("aria-hidden", "true");
+    var quizClose = document.createElement("button");
+    quizClose.id = "quiz-close";
+    quizClose.type = "button";
+    quizClose.setAttribute("aria-label", "Skip this question");
+    quizClose.appendChild(riIcon("close"));
+    var quizBody = document.createElement("div");
+    quizBody.id = "quiz-body";
+    quizSheet.appendChild(quizHandle);
+    quizSheet.appendChild(quizClose);
+    quizSheet.appendChild(quizBody);
+    document.body.appendChild(quizScrim);
+    document.body.appendChild(quizSheet);
+
+
     document.body.appendChild(scrim);
     document.body.appendChild(nav);
-    bar.appendChild(openBtn);
+    if (bar) bar.appendChild(openBtn);
 
-    /* Original header order (minus the menu button) for desktop restore. */
+    /* Original orders for desktop restore. */
     var home = [];
-    Array.prototype.forEach.call(bar.children, function (n) {
-      if (n !== openBtn) home.push(n);
-    });
+    if (bar) {
+      Array.prototype.forEach.call(bar.children, function (n) {
+        if (n !== openBtn) home.push(n);
+      });
+    }
+    var thome = [];
+    if (transport) {
+      Array.prototype.forEach.call(transport.children, function (n) {
+        thome.push(n);
+      });
+    }
+    var quizHome = null;
+    var predict = $("predict");
+    if (predict && predict.parentNode) {
+      quizHome = { parent: predict.parentNode, next: predict.nextSibling };
+    }
+
+    var isMobile = function () {
+      return !!(
+        window.matchMedia && window.matchMedia("(max-width: 800px)").matches
+      );
+    };
 
     var opened = false;
     function openNav() {
@@ -582,34 +733,235 @@ function riIcon(name) {
       openBtn.setAttribute("aria-expanded", "true");
       close.focus();
     }
-    function closeNav() {
+    function closeNav(focusBack) {
       opened = false;
       scrim.classList.remove("open");
       nav.classList.remove("open");
       nav.setAttribute("inert", "");
       openBtn.setAttribute("aria-expanded", "false");
-      openBtn.focus();
+      if (focusBack !== false) openBtn.focus();
     }
     openBtn.addEventListener("click", openNav);
-    close.addEventListener("click", closeNav);
-    scrim.addEventListener("click", closeNav);
+    close.addEventListener("click", function () {
+      closeNav(true);
+    });
+    scrim.addEventListener("click", function () {
+      closeNav(true);
+    });
     document.addEventListener("keydown", function (e) {
       if (e.key === "Escape" && opened && !document.querySelector("dialog[open]")) {
-        closeNav();
+        closeNav(true);
       }
     });
-    /* Choosing a chapter/section is the common case: close behind it. */
-    [chapterSel, sectionSel].forEach(function (sel) {
-      if (sel) sel.addEventListener("change", function () {
-        if (opened) {
-          scrim.classList.remove("open");
-          nav.classList.remove("open");
-          nav.setAttribute("inert", "");
-          openBtn.setAttribute("aria-expanded", "false");
-          opened = false;
-        }
+
+    /* ---------- recent chapters ---------- */
+    var paintRecent = function (arr) {
+      recentWrap.innerHTML = "";
+      if (!arr || !arr.length || !chapterSel) {
+        recentWrap.hidden = true;
+        return;
+      }
+      var opts = {};
+      Array.prototype.forEach.call(chapterSel.options, function (o) {
+        opts[o.value] = o.text;
       });
+      var shown = 0;
+      arr.forEach(function (v) {
+        if (!opts[v]) return;
+        shown++;
+        var b = document.createElement("button");
+        b.type = "button";
+        var short = (opts[v] || "").split(".")[0].trim() || opts[v];
+        b.textContent = "Ch " + short;
+        b.setAttribute("title", opts[v]);
+        b.setAttribute("aria-label", "Go to chapter " + opts[v]);
+        b.addEventListener("click", function () {
+          chapterSel.value = v;
+          chapterSel.dispatchEvent(new Event("change", { bubbles: true }));
+        });
+        recentWrap.appendChild(b);
+      });
+      recentWrap.hidden = shown === 0;
+    };
+    var recordRecent = function () {
+      try {
+        var cur = chapterSel ? chapterSel.value : "";
+        if (!cur) return;
+        var k = "feynman-recent";
+        var arr = JSON.parse(window.localStorage.getItem(k) || "[]");
+        arr = [cur]
+          .concat(
+            arr.filter(function (v) {
+              return v !== cur;
+            })
+          )
+          .slice(0, 4);
+        window.localStorage.setItem(k, JSON.stringify(arr));
+        paintRecent(arr);
+      } catch (e) {
+        /* ignore */
+      }
+    };
+    try {
+      paintRecent(JSON.parse(window.localStorage.getItem("feynman-recent") || "[]"));
+    } catch (e) {
+      /* ignore */
+    }
+
+    /* Choosing a chapter/section is terminal: record, then close behind it. */
+    [chapterSel, sectionSel].forEach(function (sel) {
+      if (sel)
+        sel.addEventListener("change", function () {
+          recordRecent();
+          if (opened) closeNav(false);
+          openBtn.focus();
+        });
     });
+
+    /* ---------- cue list (driven by the cue observer hook) ---------- */
+    window.__mirrorCues = function (marks, active) {
+      var items = cueList.querySelectorAll("button");
+      var need = marks.length;
+      if (items.length !== need) {
+        cueList.innerHTML = "";
+        if (!need) {
+          cueList.appendChild(cueEmpty);
+          return;
+        }
+        for (var i = 0; i < need; i++) {
+          (function (idx) {
+            var b = document.createElement("button");
+            b.type = "button";
+            b.setAttribute("role", "listitem");
+            b.addEventListener("click", function () {
+              var m = marks[idx];
+              if (m) m.click();
+              closeNav(false);
+            });
+            cueList.appendChild(b);
+          })(i);
+        }
+        items = cueList.querySelectorAll("button");
+      }
+      for (var j = 0; j < items.length; j++) {
+        var note = marks[j].getAttribute("aria-label") || "Demo point " + (j + 1);
+        if (items[j].textContent !== j + 1 + ". " + note) {
+          items[j].textContent = "";
+          var n = document.createElement("span");
+          n.className = "m-cue-n";
+          n.textContent = j + 1 + ".";
+          items[j].appendChild(n);
+          items[j].appendChild(document.createTextNode(" " + note));
+        }
+        items[j].classList.toggle("on", j === active);
+        items[j].setAttribute("aria-current", j === active ? "true" : "false");
+      }
+    };
+
+    /* ---------- quiz sheet ---------- */
+    var quizOpen = false;
+    function quizShow(show) {
+      if (show === quizOpen) return;
+      quizOpen = show;
+      quizScrim.classList.toggle("open", show);
+      quizSheet.classList.toggle("open", show);
+      if (!show) return;
+    }
+    function quizSkip() {
+      var skip =
+        predict && predict.querySelector
+          ? predict.querySelector(".predict-skip")
+          : null;
+      if (skip) skip.click();
+      else {
+        quizShow(false);
+        movePredictHome();
+      }
+    }
+    function movePredictHome() {
+      if (!predict || !quizHome || !quizHome.parent) return;
+      if (predict.parentNode !== quizHome.parent) {
+        quizHome.parent.insertBefore(predict, quizHome.next);
+      }
+    }
+    quizClose.addEventListener("click", quizSkip);
+    quizScrim.addEventListener("click", quizSkip);
+    document.addEventListener("keydown", function (e) {
+      if (
+        e.key === "Escape" &&
+        quizOpen &&
+        !opened &&
+        !document.querySelector("dialog[open]")
+      ) {
+        quizSkip();
+      }
+    });
+    if (predict && window.MutationObserver) {
+      var quizSync = function () {
+        if (!predict) return;
+        if (!isMobile()) {
+          quizShow(false);
+          movePredictHome();
+          return;
+        }
+        if (!predict.hidden && predict.parentNode !== quizBody) {
+          quizBody.appendChild(predict);
+        }
+        quizShow(!predict.hidden);
+      };
+      new MutationObserver(quizSync).observe(predict, {
+        attributes: true,
+        attributeFilter: ["hidden"],
+        childList: true,
+        subtree: true,
+      });
+      quizSync();
+    }
+
+    /* ---------- demo maximize ---------- */
+    /* ---------- reader swipe = prev/next cue (never preventDefault) ---------- */
+    (function () {
+      var reader = $("reader");
+      if (!reader) return;
+      var sx = 0,
+        sy = 0;
+      reader.addEventListener(
+        "touchstart",
+        function (e) {
+          if (!isMobile() || e.touches.length !== 1) return;
+          var t = e.touches[0];
+          sx = t.clientX;
+          sy = t.clientY;
+        },
+        { passive: true }
+      );
+      reader.addEventListener(
+        "touchend",
+        function (e) {
+          if (!isMobile()) return;
+          var t = e.changedTouches[0];
+          var dx = t.clientX - sx,
+            dy = t.clientY - sy;
+          if (Math.abs(dx) < 64 || Math.abs(dx) < 2 * Math.abs(dy)) return;
+          var el =
+            e.target && e.target.closest
+              ? e.target.closest("a,button,input,select,.cue-mark")
+              : null;
+          if (el) return;
+          try {
+            if (window.getSelection && !window.getSelection().isCollapsed) return;
+          } catch (err) {
+            /* ignore */
+          }
+          var btn = $(dx < 0 ? "next-cue" : "prev-cue");
+          if (btn && !btn.disabled) btn.click();
+        },
+        { passive: true }
+      );
+    })();
+
+    /* Missing-card browse button opens the sheet via #mnav-open
+     * (wired in the interaction layer above). */
 
     var mq = window.matchMedia
       ? window.matchMedia("(max-width: 800px)")
@@ -623,6 +975,12 @@ function riIcon(name) {
             row.appendChild(n);
           });
         });
+        var prev = $("prev-cue"),
+          next = $("next-cue"),
+          cnt = $("cue-count");
+        if (prev) cuebar.appendChild(prev);
+        if (cnt) cuebar.appendChild(cnt);
+        if (next) cuebar.appendChild(next);
       } else {
         if (opened) {
           opened = false;
@@ -631,16 +989,22 @@ function riIcon(name) {
           nav.setAttribute("inert", "");
           openBtn.setAttribute("aria-expanded", "false");
         }
+        quizShow(false);
+        movePredictHome();
         home.forEach(function (n) {
           bar.appendChild(n);
         });
         bar.appendChild(openBtn);
+        thome.forEach(function (n) {
+          transport.appendChild(n);
+        });
       }
       document.documentElement.classList.toggle("mnav", mobile);
     }
-    if (mq.addEventListener) mq.addEventListener("change", function (e) {
-      applyMobile(e.matches);
-    });
+    if (mq.addEventListener)
+      mq.addEventListener("change", function (e) {
+        applyMobile(e.matches);
+      });
     applyMobile(mq.matches);
   });
 })();

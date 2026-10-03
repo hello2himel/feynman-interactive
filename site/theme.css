@@ -907,10 +907,17 @@ button svg.ri:not(:last-child) {
   header.bar > select,
   header.bar > label.sel-label,
   header.bar > #hold,
-  header.bar > #theme,
-  header.bar > #help-btn,
-  header.bar > #pagelabel {
+  header.bar > #help-btn {
     display: none;
+  }
+
+  header.bar > #pagelabel {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
   }
 
   #mnav-open {
@@ -1163,4 +1170,550 @@ button svg.ri:not(:last-child) {
   flex: none;
   margin-right: 0.35em;
   color: var(--accent);
+}
+
+/* ================= Mobile revamp (≤800px): stage-first, words that fit ================= */
+
+/* cue buttons carry labels only inside the mobile cue bar */
+#prev-cue .btn-label,
+#next-cue .btn-label {
+  display: none;
+}
+
+#m-cuebar,
+#quiz-scrim,
+#quiz-sheet {
+  display: none;
+}
+
+/* ---- kill the 48vh trap: the column scrolls, panes keep natural height ---- */
+@media (max-width: 800px) {
+  main.split {
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+
+  #stage {
+    height: auto;
+    min-height: 0;
+    flex: none;
+  }
+
+  #reader {
+    flex: none;
+    overflow: visible;
+  }
+
+  #canvas-wrap {
+    aspect-ratio: 4 / 3;
+    max-height: 60vh;
+    max-height: 60svh;
+    min-height: 220px;
+    flex: none;
+  }
+
+  .stage-foot {
+    max-height: none;
+    overflow: visible;
+  }
+
+  /* ---- sticky bottom cue bar (real transport nodes) ---- */
+  #m-cuebar {
+    position: sticky;
+    bottom: 0;
+    z-index: 30;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px calc(8px + env(safe-area-inset-bottom, 0px));
+    background: var(--paper);
+    border-top: 1px solid var(--rule);
+  }
+
+  #m-cuebar button {
+    flex: 1;
+    min-height: 48px;
+    font-size: 16px;
+  }
+
+  #m-cuebar svg.ri {
+    display: none;
+  }
+
+  #m-cuebar .btn-label {
+    display: inline;
+  }
+
+  #m-cuebar #cue-count {
+    flex: 0 1 auto;
+    white-space: nowrap;
+  }
+
+  /* ---- sliders: stacked full-width rows ---- */
+  #controls .ctl {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+
+  #controls .ctl-name {
+    flex: 1 1 100%;
+  }
+
+  #controls input[type="range"] {
+    flex: 1;
+    width: auto;
+  }
+
+  /* ---- data table: compact, scrolls instead of squeezing ---- */
+  #panel {
+    overflow-x: auto;
+  }
+
+  #panel table {
+    font-size: 13.5px;
+    line-height: 1.5;
+  }
+
+  #panel th {
+    font-size: 12px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  #panel th,
+  #panel td {
+    padding: 6px 8px;
+  }
+
+  /* ---- sheet (was right-side drawer): bottom sheet ---- */
+  #mnav {
+    top: auto;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: auto;
+    max-height: 82vh;
+    max-height: 82svh;
+    border-left: 0;
+    border-top: 1px solid var(--rule);
+    border-radius: 12px 12px 0 0;
+    transform: translateY(103%);
+    padding-bottom: calc(14px + env(safe-area-inset-bottom, 0px));
+  }
+
+  #mnav.open {
+    transform: none;
+  }
+
+  #m-cue-list button {
+    display: flex;
+    width: 100%;
+    text-align: left;
+    align-items: baseline;
+    gap: 8px;
+    min-height: 48px;
+    padding: 10px 12px;
+    margin: 4px 0;
+    font-size: 15.5px;
+  }
+
+  #m-cue-list button .m-cue-n {
+    flex: none;
+    font-variant-numeric: tabular-nums;
+    color: var(--accent);
+    font-weight: 600;
+  }
+
+  #m-cue-list button.on {
+    border-color: var(--accent);
+    background: var(--paper-2);
+  }
+
+  .m-cue-empty {
+    font-style: italic;
+    color: var(--ink-2);
+    font-size: 15px;
+  }
+
+  .mnav-recent {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    flex: 1 1 100%;
+    margin-top: 8px;
+  }
+
+  .mnav-recent button {
+    flex: 0 1 auto;
+    min-height: 44px;
+  }
+
+  /* ---- quiz bottom sheet ---- */
+  #quiz-scrim {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 70;
+    background: rgba(26, 23, 18, 0.55);
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.2s ease;
+  }
+
+  #quiz-scrim.open {
+    opacity: 1;
+    visibility: visible;
+  }
+
+  #quiz-sheet {
+    display: block;
+    position: fixed;
+    z-index: 71;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    max-height: 86vh;
+    max-height: 86svh;
+    overflow-y: auto;
+    background: var(--paper-2);
+    border: 1px solid var(--rule);
+    border-bottom: 0;
+    border-radius: 12px 12px 0 0;
+    padding: 10px 16px calc(16px + env(safe-area-inset-bottom, 0px));
+    transform: translateY(103%);
+    transition: transform 0.24s ease;
+    visibility: hidden;
+  }
+
+  #quiz-sheet.open {
+    transform: none;
+    visibility: visible;
+  }
+
+  #quiz-sheet #predict {
+    position: static;
+    max-height: none;
+    overflow: visible;
+    background: none;
+    border: 0;
+    padding: 0;
+  }
+
+  #quiz-close {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    min-width: 44px;
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .sheet-handle {
+    width: 44px;
+    height: 4px;
+    border-radius: 2px;
+    background: var(--rule);
+    margin: 2px auto 8px;
+  }
+
+  /* ---- missing card v2 + orphan spans + read-line demotion ---- */
+  #demo-orphan {
+    display: none;
+  }
+
+  .mob-only {
+    display: inline;
+  }
+
+  .desk-only {
+    display: none;
+  }
+
+  #missing {
+    padding: 18px 16px;
+  }
+
+  .m-kicker {
+    font-variant: small-caps;
+    font-weight: 600;
+    font-size: 14px;
+    letter-spacing: 0.05em;
+    color: var(--accent);
+    margin: 0 0 4px;
+  }
+
+  .m-cta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 12px 0 4px;
+  }
+
+  #retry-status {
+    font-style: italic;
+    color: var(--ink-2);
+    font-size: 15px;
+    min-height: 1.4em;
+  }
+
+  .m-src {
+    margin-top: 10px;
+    border-top: 1px solid var(--rule);
+    padding-top: 8px;
+    font-size: 14.5px;
+    color: var(--ink-2);
+  }
+
+  .m-src summary {
+    cursor: pointer;
+    min-height: 44px;
+    font-variant: small-caps;
+    font-weight: 600;
+    color: var(--accent);
+  }
+
+  .m-nobook #read-line {
+    opacity: 0;
+  }
+
+  .m-nobook #read-line:before,
+  .m-nobook #read-line:after {
+    display: none;
+  }
+
+  /* ---- mobile type: lead prose up, kickers down, nothing justified ---- */
+  .stage-head {
+    padding: 10px 14px 8px;
+  }
+
+  #demo-title {
+    font-size: 13px;
+    line-height: 1.3;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    margin-bottom: 4px;
+  }
+
+  #demo-note,
+  .predict-q,
+  .predict-out,
+  #missing p,
+  #mirror-info p,
+  dialog dl dd,
+  #first-hint {
+    text-align: left;
+    hyphens: none;
+  }
+
+  #demo-note {
+    font-size: 18px;
+    line-height: 1.6;
+    max-width: 38ch;
+    text-wrap: pretty;
+  }
+
+  #controls .ctl-name {
+    font-size: 12.5px;
+    line-height: 1.3;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  #controls .ctl-val {
+    font-size: 13.5px;
+    line-height: 1.4;
+  }
+
+  .transport button {
+    font-size: 15px;
+    line-height: 1.3;
+    padding: 8px 12px;
+  }
+
+  .predict-kicker {
+    font-size: 13px;
+    line-height: 1.3;
+    letter-spacing: 0.06em;
+  }
+
+  .predict-q {
+    font-size: 16.5px;
+    line-height: 1.55;
+  }
+
+  .lbl {
+    font-size: 13.5px;
+    max-width: 60vw;
+  }
+
+  .cue-mark .tip {
+    font-size: 14px;
+    line-height: 1.5;
+  }
+
+  #first-hint {
+    font-size: 14px;
+    line-height: 1.55;
+    text-align: left;
+    margin: 8px 12px 0;
+  }
+
+  #missing h2 {
+    font-size: 21px;
+    line-height: 1.25;
+    text-align: left;
+  }
+
+  #missing p {
+    font-size: 16px;
+    line-height: 1.65;
+    overflow-wrap: anywhere;
+  }
+
+  #missing code {
+    font-size: 13.5px;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+  }
+
+  dialog h3 {
+    font-size: 18px;
+    line-height: 1.3;
+  }
+
+  dialog dt {
+    font-size: 13px;
+    line-height: 1.3;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  dialog dl dd {
+    font-size: 16px;
+    line-height: 1.6;
+  }
+
+  #mirror-info h4 {
+    font-size: 13px;
+    line-height: 1.3;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  #mirror-info p {
+    font-size: 16px;
+    line-height: 1.6;
+  }
+
+  .mnav-title {
+    font-size: 18px;
+    line-height: 1.3;
+  }
+
+  .mnav-kicker {
+    font-size: 12.5px;
+    line-height: 1.3;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+  }
+
+  /* ---- reader: calmer frame + less void ---- */
+  #column .page {
+    box-shadow: none;
+    margin-bottom: 14px;
+  }
+
+  #column {
+    padding-left: 22px;
+    padding-right: 14px;
+    padding-bottom: 24vh;
+  }
+
+  /* ---- landscape short phones: side-by-side back, compact chrome ---- */
+  @media (orientation: landscape) {
+    .bar {
+      padding: 6px 12px;
+      row-gap: 2px;
+    }
+  }
+}
+
+@media (max-width: 800px) and (orientation: landscape) and (max-height: 500px) {
+  .split {
+    flex-direction: row !important;
+  }
+
+  #stage {
+    width: 50% !important;
+    min-width: 0;
+    height: auto !important;
+    min-height: 0;
+  }
+
+  #canvas-wrap {
+    min-height: 0;
+    flex: 1;
+  }
+
+  #reader {
+    min-width: 0;
+    flex: 1;
+  }
+
+  #divider {
+    display: none !important;
+  }
+}
+
+@media (max-width: 400px) {
+  .brand span {
+    display: none;
+  }
+
+  #demo-note {
+    font-size: 17px;
+    line-height: 1.62;
+  }
+
+  #demo-title {
+    font-size: 12.5px;
+  }
+
+  #controls .ctl {
+    flex-basis: 100%;
+  }
+
+  #missing h2 {
+    font-size: 20px;
+  }
+
+  #panel table {
+    font-size: 13px;
+  }
+}
+
+@media (min-width: 801px) {
+  .mob-only {
+    display: none;
+  }
+
+  #m-cuebar,
+  #quiz-scrim,
+  #quiz-sheet {
+    display: none;
+  }
+}
+
+@media print {
+  #m-cuebar,
+  #quiz-scrim,
+  #quiz-sheet,
+  #mnav,
+  #mnav-scrim,
+  #first-hint {
+    display: none !important;
+  }
 }

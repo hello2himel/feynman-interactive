@@ -62,7 +62,8 @@ MIRROR_INFO = """      <div id="mirror-info">
         <em>K</em> jump between them. <em>Hold</em> pins the current demo while you scroll.
         Drag the demo to orbit or zoom (touch: one finger orbits, pinch zooms, two fingers
         pan); its sliders rewrite the scene, and <em>Restore Book Values</em> undoes your
-        changes and restores what the text describes.</p>
+        changes and restores what the text describes. On phones the menu holds chapters,
+        demo points and display; <em>Prev</em> / <em>Next</em> step through points.</p>
         <h4>Light &amp; dark</h4>
         <p>The pages follow your system theme. Use the header control to pin
         <em>Light</em> or <em>Dark</em>; dark mode reprints the scanned pages and the demo in the dark paper tones.</p>
@@ -79,20 +80,28 @@ MIRROR_INFO = """      <div id="mirror-info">
 """
 
 MISSING_HTML = """        <div id="missing" hidden>
-          <h2>Reading pages aren&rsquo;t loaded</h2>
-          <p>The demos on the left still work &mdash; pick a chapter above, or press
-          <em>J</em> / <em>K</em> to step through demo points.</p>
-          <p>To add the book pages (your own copy, for copyright reasons): run
+          <p class="m-kicker">Demo mode &middot; no book pages needed</p>
+          <h2>Play with the idea first</h2>
+          <p>This demo is live anyway &mdash; try the sliders, then step points with
+          <em>Prev</em> / <em>Next</em>.</p>
+          <p class="m-cta"><button id="browse-demos" type="button">Browse chapters</button>
+          <button id="retry-pdf" type="button">Check again</button></p>
+          <p id="retry-status" role="status"></p>
+          <details class="m-src"><summary>Where do the pages come from?</summary>
+          <p>Page scans ship with <em>your own copy</em> for copyright reasons. Self-host:
           <code>python3 extract_pdf.py /path/to/feynman-lectures.pdf site/vol1.pdf</code>,
-          then reload. Deployed copies can set a <code>PDF_URL</code> instead &mdash;
-          see the <a href="https://github.com/hello2himel/feynman-interactive#the-book-file">README</a>.</p>
-          <p><button id="retry-pdf" type="button">Retry loading pages</button></p>
+          then reload. Deployed copies can set a <code>PDF_URL</code> &mdash; see the
+          <a href="https://github.com/hello2himel/feynman-interactive#the-book-file">README</a>.</p></details>
         </div>
 """
 
 ORPHAN_HTML = (
-    '      <p id="demo-orphan" hidden>The book pages aren&rsquo;t loaded, so this demo '
-    "runs on its own &mdash; <em>J</em> / <em>K</em> still step through the demos.</p>\n"
+    '<p id="demo-orphan" hidden>The book pages aren&rsquo;t loaded, so this demo '
+    "runs on its own"
+    '<span class="mob-only"> &mdash; find chapters in the menu, step points with '
+    "<em>Prev</em> / <em>Next</em>.</span>"
+    '<span class="desk-only"> &mdash; <em>J</em> / <em>K</em> still step through '
+    "the demos.</span></p>\n"
 )
 
 
@@ -181,10 +190,18 @@ def apply_patch() -> bool:
             )
             changed = True
 
-    # 7a. orphan-demo banner slot after the demo note.
-    if 'id="demo-orphan"' not in html:
+    # 7a. orphan-demo banner slot after the demo note. Refresh the copy
+    # when ORPHAN_HTML changed; insert it when missing.
+    orphan_re = re.compile(r" *<p id=\"demo-orphan\" hidden>.*?</p>\n", re.S)
+    m_orphan = orphan_re.search(html)
+    if m_orphan:
+        want = "      " + ORPHAN_HTML
+        if m_orphan.group(0) != want:
+            html = html[: m_orphan.start()] + want + html[m_orphan.end():]
+            changed = True
+    elif 'id="demo-orphan"' not in html:
         html, c = _swap(
-            html, '      <div id="demo-note"></div>', '      <div id="demo-note"></div>\n' + ORPHAN_HTML.rstrip("\n")
+            html, '      <div id="demo-note"></div>', '      <div id="demo-note"></div>\n      ' + ORPHAN_HTML.rstrip("\n")
         )
         changed |= c
 

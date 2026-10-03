@@ -72,12 +72,16 @@ payload): theme states, cue arrows, info, menu/close, play/pause (mirrored
 through the bundle's label toggles), restart, restore, hold. Text labels are
 kept everywhere for screen readers and clarity.
 
-**Mobile drawer** — under 800 px the header collapses to brand + hamburger;
-chapters/display/about move (same nodes, never clones) into a slide-in
-drawer with kicker sections. Desktop order is restored on resize. All in
-`site/theme.js`; no `index.html` structure changes needed. Transport buttons
-go icon-only under 800 px (labels kept in the roomier drawer and everywhere
-on desktop).
+**Mobile (≤800 px): sheet + cue bar, not columns.** The 48 vh stacked stage
+is replaced by a natural-height stage (4:3 canvas capped at 60svh), a sticky
+bottom cue bar (`‹ Prev · Demo n of m · Next ›`, the real transport nodes),
+and a bottom sheet (chapters + real selects, demo-point jump list, recent
+chapters, Hold, help) instead of the old side drawer. Theme stays one tap
+away in the header; pagelabel stays put (screen-reader-only on phones).
+Sliders stack full-width; tables scroll compactly; the quiz becomes a bottom
+sheet that mirrors the bundle's own show/hide; demos expand fullscreen.
+Landscape-short phones get a compact side-by-side back. Type goes lead-prose
+up (18px left-aligned demo note), kickers down, nothing justified.
 
 **Logo** — the pinwheel mark lives in the header (inline SVG,
 `currentColor` → accent in both modes) with themed `favicon.svg` (embedded

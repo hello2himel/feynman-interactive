@@ -63,7 +63,9 @@ paper tones via a computed filter chain.
 
 **Info dialog:** the header `i` button keeps the upstream keyboard shortcuts
 and appends a mirror-owned section (about, reading guide, theme, book file,
-links).
+links). The modal gets pro treatment: explicit 44px × button, backdrop-click
+close, sticky footer, entrance motion (off under reduced-motion), and a
+bottom-sheet presentation on phones.
 
 **Icons** — inlined RemixIcon 4.6.0 SVG (`currentColor`, ~4 KB, no font
 payload): theme states, cue arrows, info, menu/close, play/pause (mirrored
@@ -73,7 +75,9 @@ kept everywhere for screen readers and clarity.
 **Mobile drawer** — under 800 px the header collapses to brand + hamburger;
 chapters/display/about move (same nodes, never clones) into a slide-in
 drawer with kicker sections. Desktop order is restored on resize. All in
-`site/theme.js`; no `index.html` structure changes needed.
+`site/theme.js`; no `index.html` structure changes needed. Transport buttons
+go icon-only under 800 px (labels kept in the roomier drawer and everywhere
+on desktop).
 
 **Interaction layer** (`site/theme.js`, progressive enhancement only):
 keyboard-operable divider (arrows, double-click resets), cue counter with

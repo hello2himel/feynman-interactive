@@ -14,6 +14,7 @@ Structural patches (fail loudly if anchors vanish):
   5. Mirror-owned info section in the help dialog (upstream shortcuts stay).
   6. Mirror-owned missing-PDF guidance + retry button.
   7. Orphan-demo banner slot + cue counter + polite live region.
+     Explicit × close button as the dialog's first child.
 
 Cosmetic upstream-text patches (skipped silently when upstream rewords):
   8. "?" help button -> italic serif "i" (+ labels).
@@ -185,6 +186,23 @@ def apply_patch() -> bool:
             html, '      <div id="demo-note"></div>', '      <div id="demo-note"></div>\n' + ORPHAN_HTML.rstrip("\n")
         )
         changed |= c
+
+    # 7c. explicit × close button as the dialog's first child.
+    if 'id="help-close"' not in html:
+        m = re.search(r'(<dialog[^>]*id="help"[^>]*>)', html)
+        if m:
+            x_btn = (
+                m.group(1)
+                + '\n      <button id="help-close" type="button"'
+                ' aria-label="Close this panel">'
+                '<svg class="ri" viewBox="0 0 24 24" aria-hidden="true"'
+                ' fill="currentColor"><path d="M11.9997 10.5865L16.9495 '
+                "5.63672L18.3637 7.05093L13.4139 12.0007L18.3637 16.9504L16.9495 "
+                "18.3646L11.9997 13.4149L7.04996 18.3646L5.63574 16.9504L10.5855 "
+                "12.0007L5.63574 7.05093L7.04996 5.63672L11.9997 10.5865Z\"/></button>"
+            )
+            html = html[: m.end(1)] + x_btn[len(m.group(1)):] + html[m.end(1):]
+            changed = True
 
     # 7b. cue counter + polite live region after the next-cue button.
     if 'id="cue-count"' not in html:

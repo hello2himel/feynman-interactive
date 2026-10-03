@@ -335,6 +335,7 @@ dialog h3 {
   font: 600 20px/1.25 var(--display);
   font-variant: small-caps;
   letter-spacing: 0.03em;
+  padding-right: 52px;
 }
 
 dialog dt {
@@ -1039,6 +1040,114 @@ button svg.ri:not(:last-child) {
   #mnav,
   #mnav-scrim,
   #mnav-open {
+    display: none;
+  }
+}
+
+/* ---- help dialog: pro modal ---- */
+#help {
+  max-height: calc(100vh - 3rem);
+  overflow-y: auto;
+}
+
+#help[open] {
+  animation: dlg-in 0.18s ease;
+}
+
+#help[open]::backdrop {
+  animation: dlg-fade 0.18s ease;
+}
+
+@keyframes dlg-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes dlg-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+#help-close {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  min-width: 44px;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--paper);
+  z-index: 1;
+}
+
+#help-close:hover {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
+#help form[method="dialog"] {
+  position: sticky;
+  bottom: 0;
+  background: var(--paper);
+  border-top: 1px solid var(--rule);
+  margin-top: 14px;
+  padding: 10px 0 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #help[open],
+  #help[open]::backdrop {
+    animation: none;
+  }
+}
+
+/* ---- mobile: bottom-sheet dialog, icon-only transport, compact type ---- */
+@media (max-width: 800px) {
+  #help {
+    margin: auto auto 0;
+    width: 100%;
+    max-width: 100%;
+    max-height: 92vh;
+    border-left: 0;
+    border-right: 0;
+    border-bottom: 0;
+    border-radius: 10px 10px 0 0;
+    padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+  }
+
+  .bar {
+    padding: 8px 12px;
+  }
+
+  #demo-note {
+    font-size: 15px;
+    line-height: 1.6;
+  }
+
+  .predict-q {
+    font-size: 16px;
+  }
+
+  .predict-out {
+    font-size: 15px;
+  }
+
+  #panel table {
+    font-size: 14px;
+  }
+
+  .transport button .btn-label {
     display: none;
   }
 }

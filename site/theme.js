@@ -151,6 +151,20 @@ function riIcon(name) {
   );
 
   onReady(function () {
+    /* ---------- help dialog: explicit close paths ---------- */
+    var helpDlg = $("help");
+    if (helpDlg) {
+      helpDlg.addEventListener("click", function (e) {
+        if (e.target === helpDlg) helpDlg.close();
+      });
+      var helpX = $("help-close");
+      if (helpX) {
+        helpX.addEventListener("click", function () {
+          helpDlg.close();
+        });
+      }
+    }
+
     /* ---------- split pane: clamp stored value, keyboard divider ---------- */
     try {
       var s = window.localStorage.getItem("split");
@@ -418,17 +432,32 @@ function riIcon(name) {
     if (!btn) return;
     btn.innerHTML = "";
     btn.appendChild(riIcon(icon));
-    btn.appendChild(document.createTextNode(" " + text));
+    var s = document.createElement("span");
+    s.className = "btn-label";
+    s.textContent = text;
+    btn.appendChild(s);
+  }
+
+  function wrapLabel(btn) {
+    if (!btn || btn.querySelector("span.btn-label")) return;
+    var t = null;
+    for (var n = btn.firstChild; n; n = n.nextSibling) {
+      if (n.nodeType === 3 && n.nodeValue.trim() !== "") {
+        t = n;
+        break;
+      }
+    }
+    if (!t) return;
+    var s = document.createElement("span");
+    s.className = "btn-label";
+    s.textContent = t.nodeValue.trim();
+    btn.replaceChild(s, t);
   }
 
   function prependIcon(btn, icon) {
     if (!btn || btn.querySelector("svg.ri")) return;
     btn.insertBefore(riIcon(icon), btn.firstChild);
-    /* spacing between icon and existing label */
-    var t = btn.childNodes[1];
-    if (t && t.nodeType === 3 && t.nodeValue.charAt(0) !== " ") {
-      t.nodeValue = " " + t.nodeValue;
-    }
+    wrapLabel(btn);
   }
 
   onReady(function () {

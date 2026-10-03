@@ -90,11 +90,13 @@ navigates ONLY by scrolling `#reader` — `display:none` would silently break
 every cue jump. Default Split on desktop, Playground on phones.
 
 **Navigation hardening** — far smooth-scroll flights stall when renders
-yank them, so jumps carry an arrival watchdog (progress-checked retries,
-bounded): chapter/section changes, cue taps, swipe. The bundle leaves the §
-box stale after chapter-dropdown jumps, so a mirror repair rebuilds it from
-a scraped section table (`site/nav-data.js`, fallback only) on hash
-arrival. Optimistic `Demo → N` counter while flying; sheet trap + inert
+yank them, so all jumps go instant (computed reader offsets) with an
+arrival watchdog (progress-checked retries, bounded): chapter/section
+changes, cue taps, swipe, palette. The bundle leaves the § box stale after
+chapter-dropdown jumps, so a mirror repair rebuilds it from a scraped
+section table (`site/nav-data.js`, fallback only). Counter reads section
+scope (`§1-2 · 3 of 5 · #147/450`); jump palette (`/`, `site/palette.js`)
+searches chapters, sections and recent points. Sheet trap + inert
 background; focus returns on jump/close/resize; manual play toggles in Book
 mode cancel auto-resume; stored Split survives phone visits.
 

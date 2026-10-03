@@ -199,6 +199,7 @@ function riIcon(name) {
         pct = Math.min(75, Math.max(25, pct));
         document.documentElement.style.setProperty("--split", pct + "%");
         divider.setAttribute("aria-valuenow", String(Math.round(pct)));
+        divider.setAttribute("aria-valuetext", Math.round(pct) + " percent demo");
         if (save !== false) {
           try {
             window.localStorage.setItem("split", pct + "%");
@@ -207,16 +208,42 @@ function riIcon(name) {
           }
         }
       };
+      var setSplitLabel = function () {
+        try {
+          var cur = parseFloat(
+            getComputedStyle(document.documentElement).getPropertyValue("--split")
+          );
+          if (isFinite(cur)) {
+            divider.setAttribute(
+              "aria-valuetext",
+              Math.round(cur) + " percent demo"
+            );
+          }
+        } catch (e) {
+          /* ignore */
+        }
+      };
       divider.addEventListener("keydown", function (e) {
         var cur = parseFloat(
           getComputedStyle(document.documentElement).getPropertyValue("--split")
         );
         if (!isFinite(cur)) cur = 46;
-        if (e.key === "ArrowLeft") {
-          setSplit(cur - 5);
-          e.preventDefault();
-        } else if (e.key === "ArrowRight") {
-          setSplit(cur + 5);
+        var step = e.shiftKey || e.ctrlKey ? 10 : 5;
+        var handled = true;
+        if (e.key === "ArrowLeft" || e.key === "ArrowDown") setSplit(cur - step);
+        else if (e.key === "ArrowRight" || e.key === "ArrowUp") setSplit(cur + step);
+        else if (e.key === "Home") setSplit(25);
+        else if (e.key === "End") setSplit(75);
+        else if (e.key === "Enter" && e.shiftKey) {
+          setSplit(46);
+          try {
+            window.localStorage.removeItem("split");
+          } catch (err) {
+            /* ignore */
+          }
+        } else handled = false;
+        if (handled) {
+          setSplitLabel();
           e.preventDefault();
         }
       });
@@ -236,6 +263,35 @@ function riIcon(name) {
     var next = $("next-cue");
     var count = $("cue-count");
     var live = $("pos-live");
+    /* Section lookup: flat NAV sections ordered by page. */
+    var navSecs = null;
+    var getNavSecs = function () {
+      if (navSecs || !window.__NAV) return navSecs;
+      navSecs = [];
+      try {
+        window.__NAV.forEach(function (ch) {
+          (ch[3] || []).forEach(function (s) {
+            navSecs.push({ id: s[0], page: s[2] });
+          });
+        });
+        navSecs.sort(function (a, b) {
+          return a.page - b.page;
+        });
+      } catch (e) {
+        navSecs = null;
+      }
+      return navSecs;
+    };
+    var sectionOfPage = function (pageIdx) {
+      var secs = getNavSecs();
+      if (!secs || !secs.length || pageIdx < 0) return null;
+      var cur = secs[0];
+      for (var i = 0; i < secs.length; i++) {
+        if (secs[i].page <= pageIdx) cur = secs[i];
+        else break;
+      }
+      return cur;
+    };
     var updateCues = function () {
       if (!column) return;
       var marks = column.querySelectorAll(".cue-mark");
@@ -251,10 +307,39 @@ function riIcon(name) {
       } catch (e) {
         /* ignore */
       }
+      /* Local scope: which section is the active cue in, and where
+       * within it. Falls back to global counts without NAV/pages. */
+      var scopeTxt = "";
+      try {
+        if (active >= 0) {
+          var pages = column.querySelectorAll(":scope > .page");
+          var pg = marks[active].closest ? marks[active].closest(".page") : null;
+          var pIdx = pg ? Array.prototype.indexOf.call(pages, pg) : -1;
+          var sec = sectionOfPage(pIdx);
+          if (sec) {
+            var local = 0,
+              total = 0;
+            for (var k = 0; k < marks.length; k++) {
+              var pk = marks[k].closest ? marks[k].closest(".page") : null;
+              var pi = pk ? Array.prototype.indexOf.call(pages, pk) : -1;
+              if (sectionOfPage(pi) === sec) {
+                total++;
+                if (k <= active) local++;
+              }
+            }
+            if (total > 0) {
+              scopeTxt = "§" + sec.id + " · " + local + " of " + total + " · ";
+            }
+          }
+        }
+      } catch (e) {
+        /* ignore */
+      }
       if (count) {
+        count.classList.remove("is-flight");
         count.textContent =
           active >= 0
-            ? prefix + "Demo " + (active + 1) + " of " + marks.length
+            ? prefix + scopeTxt + "#" + (active + 1) + "/" + marks.length
             : prefix + marks.length + " demo points";
       }
       if (prev) prev.disabled = active <= 0;
@@ -262,11 +347,15 @@ function riIcon(name) {
       if (active >= 0 && updateCues.last !== active) {
         updateCues.last = active;
         try {
-          var sh = document.querySelector(".stage-head");
-          if (sh) {
-            sh.classList.remove("swap-in");
-            void sh.offsetWidth;
-            sh.classList.add("swap-in");
+          var nowT = performance.now();
+          if (!updateCues._lastSwap || nowT - updateCues._lastSwap > 400) {
+            updateCues._lastSwap = nowT;
+            var sh = document.querySelector(".stage-head");
+            if (sh) {
+              sh.classList.remove("swap-in");
+              void sh.offsetWidth;
+              sh.classList.add("swap-in");
+            }
           }
         } catch (e) {
           /* ignore */
@@ -277,6 +366,21 @@ function riIcon(name) {
         var note = marks[active].getAttribute("aria-label") || "";
         live.textContent =
           "Demo " + (active + 1) + " of " + marks.length + (note ? ": " + note : "");
+        try {
+          var pts = JSON.parse(window.localStorage.getItem("feynman-points") || "[]");
+          var h = window.location.hash || "";
+          var title = "";
+          var dt = document.getElementById("demo-title");
+          if (dt) title = dt.textContent.trim().slice(0, 60);
+          pts = [{ h: h, t: title }].concat(
+            pts.filter(function (p) {
+              return p && p.h !== h;
+            })
+          ).slice(0, 6);
+          window.localStorage.setItem("feynman-points", JSON.stringify(pts));
+        } catch (e) {
+          /* ignore */
+        }
       }
       if (window.__mirrorCues) {
         try {
@@ -399,8 +503,32 @@ function riIcon(name) {
       }
     };
 
-    /* ---------- controls: expose values, label tables ---------- */
+    /* ---------- controls: expose values, label tables + controls ---------- */
     var controls = $("controls");
+    var labelControls = function () {
+      if (!controls) return;
+      try {
+        var ctls = controls.querySelectorAll(".ctl");
+        for (var i = 0; i < ctls.length; i++) {
+          (function (w, i) {
+            var inp = w.querySelector("input");
+            if (!inp) return;
+            var nm = w.querySelector(".ctl-name");
+            var val = w.querySelector(".ctl-val");
+            if (nm && !nm.id) nm.id = "ctl-n-" + i;
+            if (val && !val.id) val.id = "ctl-v-" + i;
+            if (nm) {
+              inp.setAttribute(
+                "aria-labelledby",
+                nm.id + (val && val.id ? " " + val.id : "")
+              );
+            }
+          })(ctls[i], i);
+        }
+      } catch (e) {
+        /* ignore */
+      }
+    };
     if (controls) {
       controls.addEventListener("input", function (e) {
         var t = e.target;
@@ -415,12 +543,21 @@ function riIcon(name) {
           }
         }
       });
+      labelControls();
+      if (window.MutationObserver) {
+        new MutationObserver(labelControls).observe(controls, {
+          childList: true,
+          subtree: true,
+        });
+      }
     }
     var panel = $("panel");
     if (panel && window.MutationObserver) {
       var scopeTables = function () {
         var ths = panel.querySelectorAll("th:not([scope])");
         for (var i = 0; i < ths.length; i++) ths[i].setAttribute("scope", "col");
+        var tbl = panel.querySelector("table:not([aria-label])");
+        if (tbl) tbl.setAttribute("aria-label", "Demo data table");
       };
       scopeTables();
       var scopeQueued = false;
@@ -449,6 +586,20 @@ function riIcon(name) {
     var predict = $("predict");
     if (predict && window.MutationObserver) {
       var armRetry = function () {
+        if (!predict.querySelector(".predict-why")) {
+          try {
+            var anchor = predict.querySelector(".predict-opts");
+            if (anchor) {
+              var why = document.createElement("p");
+              why.className = "predict-why";
+              why.textContent =
+                "Feynman's rule: guess the outcome before you run it.";
+              predict.insertBefore(why, anchor);
+            }
+          } catch (e) {
+            /* ignore */
+          }
+        }
         var out = predict.querySelector(".predict-out");
         var opts = predict.querySelectorAll(".predict-opts button");
         if (!out || !out.textContent.trim() || !opts.length) return;
@@ -606,7 +757,7 @@ function riIcon(name) {
         var hint = document.createElement("p");
         hint.id = "first-hint";
         hint.innerHTML =
-          "Tip: <em>J</em> / <em>K</em> step demos, <em>H</em> holds one, drag the demo to orbit \u2014 <em>i</em> (top right) explains everything.";
+          "New here? Drag a slider and watch the numbers move, then step with Prev / Next (or <em>J</em> / <em>K</em>).";
         var got = document.createElement("button");
         got.type = "button";
         got.textContent = "Got it";
@@ -804,6 +955,25 @@ function riIcon(name) {
     var demosRow = nav.querySelector('[data-slot="demos"]');
     if (demosRow) demosRow.appendChild(cueList);
 
+    /* ---------- sheet search entry (opens the jump palette) ---------- */
+    var palBtn = document.createElement("button");
+    palBtn.type = "button";
+    palBtn.id = "m-search-open";
+    palBtn.textContent = "Search chapters & sections";
+    palBtn.setAttribute("aria-label", "Search chapters and sections");
+    palBtn.addEventListener("click", function () {
+      closeNav(false);
+      try {
+        if (window.__openPalette) window.__openPalette();
+      } catch (e) {
+        /* ignore */
+      }
+    });
+    var chaptersRow = nav.querySelector('[data-slot="chapters"]');
+    if (chaptersRow) {
+      chaptersRow.insertBefore(palBtn, chaptersRow.firstChild);
+      groups.chapters.unshift(palBtn);
+    }
     var openBtn = document.createElement("button");
     openBtn.id = "mnav-open";
     openBtn.type = "button";
@@ -1401,7 +1571,19 @@ function riIcon(name) {
       if (!n || target1 < 1 || target1 > n) return;
       flight = { target: target1, t0: Date.now(), retried: false };
       try {
-        if (countQ) countQ.textContent = "Demo \u2192 " + target1 + " of " + n;
+        if (countQ) {
+          countQ.textContent = "Demo \u2192 " + target1 + " of " + n;
+          countQ.classList.add("is-flight");
+        }
+        var liveEl = document.getElementById("pos-live");
+        if (liveEl) {
+          liveEl.textContent = "";
+          var say = function () {
+            liveEl.textContent = "Going to demo " + target1 + " of " + n;
+          };
+          if (window.requestAnimationFrame) window.requestAnimationFrame(say);
+          else say();
+        }
       } catch (e) {
         /* ignore */
       }
@@ -1764,6 +1946,34 @@ function riIcon(name) {
       /* ignore */
     }
     paintModes();
+    try {
+      var hid = null;
+      if (v === "book") hid = document.querySelector("main.split section#stage");
+      else if (v === "lab") hid = $("reader");
+      if (
+        hid &&
+        document.activeElement &&
+        hid.contains(document.activeElement)
+      ) {
+        var dest =
+          v === "book"
+            ? document.querySelector("#column .cue-mark, #browse-demos, #retry-pdf")
+            : document.querySelector("#play, #prev-cue, #chapter");
+        var fallback =
+          document.getElementById("mnav-open") || document.body;
+        try {
+          (dest || fallback).focus({ preventScroll: true });
+        } catch (e) {
+          try {
+            (dest || fallback).focus();
+          } catch (err) {
+            /* ignore */
+          }
+        }
+      }
+    } catch (e) {
+      /* ignore */
+    }
     /* Book mode pauses a playing demo (battery + low-end GPUs); leaving
      * restores it only if we were the ones who paused it. */
     try {

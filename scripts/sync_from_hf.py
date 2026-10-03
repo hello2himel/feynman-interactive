@@ -41,6 +41,7 @@ KEEP = {
     "site/theme.css",
     "site/theme.js",
     "site/nav-data.js",
+    "site/palette.js",
     "site/fonts",
     "site/favicon.svg",
     "site/favicon.png",

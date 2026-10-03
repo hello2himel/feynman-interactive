@@ -11,6 +11,7 @@
     <link rel="alternate icon" href="/favicon.png" />
     <link rel="stylesheet" href="/theme.css" />
     <script src="/nav-data.js" defer></script>
+    <script src="/palette.js" defer></script>
     <script src="/theme.js"></script>
   </head>
   <body>
@@ -52,7 +53,7 @@
         </div>
       </section>
 
-      <div id="divider" role="separator" aria-orientation="vertical" tabindex="0" aria-label="Resize demo and text panes. Left and right arrows." aria-valuemin="25" aria-valuemax="75" aria-valuenow="46" title="Drag to resize"></div>
+      <div id="divider" role="slider" tabindex="0" aria-label="Demo and text pane split" aria-orientation="horizontal" aria-valuemin="25" aria-valuemax="75" aria-valuenow="46" title="Drag or use arrow keys to resize (Home/End jump, Shift+Enter resets)"></div>
 
       <section id="reader" aria-label="Lecture text">
         <div id="read-line" aria-hidden="true"></div>
@@ -85,6 +86,8 @@
         <dt>Drag / scroll on demo</dt><dd>Pan · zoom (2D) or orbit · zoom (3D)</dd>
         <dt>?</dt><dd>Open this panel</dd>
         <dt>Esc</dt><dd>Close this panel</dd>
+        <dt>/</dt><dd>Search chapters and sections</dd>
+        <dt>Left / Right</dt><dd>Resize demo and text panes</dd>
       </dl>
       <p class="muted">The marks in the left margin show each demo point. Click one to jump there.</p>
       <div id="mirror-info">

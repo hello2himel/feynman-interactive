@@ -7,8 +7,8 @@ sync (scripts/sync_from_hf.py) and on every Netlify build
 
 Structural patches (fail loudly if anchors vanish):
   1. Mirror theme stylesheet (/theme.css) after the bundle CSS.
-  2. Mirror theme script (/theme.js) right after it (moved below the CSS so
-     render-blocking stylesheets are discovered first; still runs pre-paint).
+  2. Mirror scripts in order: theme.js, nav-data.js (section table),
+     palette.js (jump palette) — all after the stylesheet.
   3. Font preload for EB Garamond.
   4. Light/dark/system theme toggle button in the header bar.
   5. Mirror-owned info section in the help dialog (upstream shortcuts stay).
@@ -151,6 +151,40 @@ def apply_patch() -> bool:
             '\n    <script src="/nav-data.js" defer></script>' + anchor,
             1,
         )
+        changed = True
+
+    # 2c. jump palette (deferred; needs nav-data first, so last of the three).
+    if "/palette.js" not in html:
+        anchor = '\n    <script src="/nav-data.js" defer></script>'
+        if anchor not in html:
+            raise SystemExit("theme_patch: nav-data line not found in site/index.html")
+        html = html.replace(
+            anchor,
+            anchor + '\n    <script src="/palette.js" defer></script>',
+            1,
+        )
+        changed = True
+
+    # 2d. canonical mirror script order (nav-data, palette, theme.js),
+    # regardless of which generation wrote them.
+    css_anchor = "\n" + THEME_CSS_LINE
+    canon = (
+        css_anchor
+        + '    <script src="/nav-data.js" defer></script>\n'
+        + '    <script src="/palette.js" defer></script>\n'
+        + '    <script src="/theme.js"></script>\n'
+    )
+    if canon not in html:
+        for src in ("theme.js", "nav-data.js", "palette.js"):
+            html = re.sub(
+                r"^.*" + re.escape('<script src="/' + src + '"') + r".*\n?",
+                "",
+                html,
+                flags=re.M,
+            )
+        if css_anchor not in html:
+            raise SystemExit("theme_patch: theme.css link not found in site/index.html")
+        html = html.replace(css_anchor, canon, 1)
         changed = True
 
     # 3. font preload after the viewport meta.
@@ -298,15 +332,19 @@ def apply_patch() -> bool:
     # 9b. dialog name + heading anchor.
     html, c = _swap(html, '<dialog id="help">', '<dialog id="help" aria-labelledby="help-title">')
     changed |= c
-    # 9c. divider keyboard operability.
-    html, c = _swap(
-        html,
-        '<div id="divider" role="separator" aria-orientation="vertical" title="Drag to resize">',
-        '<div id="divider" role="separator" aria-orientation="vertical" tabindex="0"'
-        ' aria-label="Resize demo and text panes. Left and right arrows."'
-        ' aria-valuemin="25" aria-valuemax="75" aria-valuenow="46" title="Drag to resize">',
-    )
-    changed |= c
+    # 9c. divider keyboard operability (real slider semantics).
+    # Regex migration: converges upstream original + older patched forms.
+    mdiv = re.search(r'<div id="divider"[^>]*>', html)
+    if mdiv and 'role="slider"' not in mdiv.group(0):
+        html = (
+            html[: mdiv.start()]
+            + '<div id="divider" role="slider" tabindex="0"'
+            ' aria-label="Demo and text pane split" aria-orientation="horizontal"'
+            ' aria-valuemin="25" aria-valuemax="75" aria-valuenow="46"'
+            ' title="Drag or use arrow keys to resize (Home/End jump, Shift+Enter resets)">'
+            + html[mdiv.end():]
+        )
+        changed = True
     # 9d. polite live pagelabel.
     html, c = _swap(
         html,
@@ -341,14 +379,17 @@ def apply_patch() -> bool:
         "The marks in the left margin show each demo point. Click one to jump there.",
     )
     changed |= c
-    # 10e. document the ? / Esc keys inside the shortcuts list.
-    if "<dt>?</dt>" not in html:
+    # 10g. shortcut rows (convergent on all file generations: pristine has
+    # only the Drag row, older patched files have ?/Esc, current has all).
+    if "<dt>/</dt>" not in html:
         html, c = _swap(
             html,
             "        <dt>Drag / scroll on demo</dt><dd>Pan \u00b7 zoom (2D) or orbit \u00b7 zoom (3D)</dd>",
             "        <dt>Drag / scroll on demo</dt><dd>Pan \u00b7 zoom (2D) or orbit \u00b7 zoom (3D)</dd>\n"
             "        <dt>?</dt><dd>Open this panel</dd>\n"
-            "        <dt>Esc</dt><dd>Close this panel</dd>",
+            "        <dt>Esc</dt><dd>Close this panel</dd>\n"
+            "        <dt>/</dt><dd>Search chapters and sections</dd>\n"
+            "        <dt>Left / Right</dt><dd>Resize demo and text panes</dd>",
         )
         changed |= c
     # 10f. Close states its shortcut and takes initial focus.

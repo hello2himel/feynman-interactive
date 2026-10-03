@@ -12,6 +12,9 @@ RI['history'] = '<path d="M12 2C17.5228 2 22 6.47715 22 12C22 17.5228 17.5228 22
 RI['pushpin'] = '<path d="M13.8273 1.69L22.3126 10.1753L20.8984 11.5895L20.1913 10.8824L15.9486 15.125L15.2415 18.6606L13.8273 20.0748L9.58466 15.8321L4.63492 20.7819L3.2207 19.3677L8.17045 14.4179L3.92781 10.1753L5.34202 8.76107L8.87756 8.05396L13.1202 3.81132L12.4131 3.10422L13.8273 1.69ZM14.5344 5.22554L9.86358 9.89637L7.0417 10.4607L13.5418 16.9609L14.1062 14.139L18.7771 9.46818L14.5344 5.22554Z"/>';
 RI['play'] = '<path d="M16.3944 12.0001L10 7.7371V16.263L16.3944 12.0001ZM19.376 12.4161L8.77735 19.4818C8.54759 19.635 8.23715 19.5729 8.08397 19.3432C8.02922 19.261 8 19.1645 8 19.0658V4.93433C8 4.65818 8.22386 4.43433 8.5 4.43433C8.59871 4.43433 8.69522 4.46355 8.77735 4.5183L19.376 11.584C19.6057 11.7372 19.6678 12.0477 19.5146 12.2774C19.478 12.3323 19.4309 12.3795 19.376 12.4161Z"/>';
 RI['pause'] = '<path d="M6 5H8V19H6V5ZM16 5H18V19H16V5Z"/>';
+RI['book-open'] = '<path d="M13 21V23H11V21H3C2.44772 21 2 20.5523 2 20V4C2 3.44772 2.44772 3 3 3H9C10.1947 3 11.2671 3.52375 12 4.35418C12.7329 3.52375 13.8053 3 15 3H21C21.5523 3 22 3.44772 22 4V20C22 20.5523 21.5523 21 21 21H13ZM20 19V5H15C13.8954 5 13 5.89543 13 7V19H20ZM11 19V7C11 5.89543 10.1046 5 9 5H4V19H11Z"/>';
+RI['flask'] = '<path d="M15.9994 2V4H14.9994V7.24291C14.9994 8.40051 15.2506 9.54432 15.7357 10.5954L20.017 19.8714C20.3641 20.6236 20.0358 21.5148 19.2836 21.8619C19.0865 21.9529 18.8721 22 18.655 22H5.34375C4.51532 22 3.84375 21.3284 3.84375 20.5C3.84375 20.2829 3.89085 20.0685 3.98181 19.8714L8.26306 10.5954C8.74816 9.54432 8.99939 8.40051 8.99939 7.24291V4H7.99939V2H15.9994ZM13.3873 10.0012H10.6115C10.5072 10.3644 10.3823 10.7221 10.2371 11.0724L10.079 11.4335L6.12439 20H17.8734L13.9198 11.4335C13.7054 10.9691 13.5276 10.4902 13.3873 10.0012ZM10.9994 7.24291C10.9994 7.49626 10.9898 7.7491 10.9706 8.00087H13.0282C13.0189 7.87982 13.0119 7.75852 13.0072 7.63704L12.9994 7.24291V4H10.9994V7.24291Z"/>';
+RI['layout-column'] = '<path d="M11 5H5V19H11V5ZM13 5V19H19V5H13ZM4 3H20C20.5523 3 21 3.44772 21 4V20C21 20.5523 20.5523 21 20 21H4C3.44772 21 3 20.5523 3 20V4C3 3.44772 3.44772 3 4 3Z"/>';
 RI['refresh'] = '<path d="M5.46257 4.43262C7.21556 2.91688 9.5007 2 12 2C17.5228 2 22 6.47715 22 12C22 14.1361 21.3302 16.1158 20.1892 17.7406L17 12H20C20 7.58172 16.4183 4 12 4C9.84982 4 7.89777 4.84827 6.46023 6.22842L5.46257 4.43262ZM18.5374 19.5674C16.7844 21.0831 14.4993 22 12 22C6.47715 22 2 17.5228 2 12C2 9.86386 2.66979 7.88416 3.8108 6.25944L7 12H4C4 16.4183 7.58172 20 12 20C14.1502 20 16.1022 19.1517 17.5398 17.7716L18.5374 19.5674Z"/>';
 
 function riIcon(name) {
@@ -1006,5 +1009,120 @@ function riIcon(name) {
         applyMobile(e.matches);
       });
     applyMobile(mq.matches);
+  });
+})();
+
+/* View modes: Split | Book | Playground. One bottom control (sticky bar on
+ * phones, floating pill on desktop) toggles body[data-mview]; CSS shows one
+ * or both panes. Persisted in localStorage, default Split (current layout).
+ * Progressive enhancement only — without JS there is no bar and both panes
+ * show, exactly like today. */
+(function () {
+  "use strict";
+
+  function $(id) {
+    return document.getElementById(id);
+  }
+
+  function onReady(fn) {
+    if (document.readyState === "loading") {
+      document.addEventListener("DOMContentLoaded", fn, { once: true });
+    } else {
+      fn();
+    }
+  }
+
+  var VIEWS = ["split", "book", "lab"];
+  var META = {
+    split: {
+      icon: "layout-column",
+      word: "Split",
+      label: "Split view: demo and book together",
+    },
+    book: { icon: "book-open", word: "Book", label: "Book fullscreen" },
+    lab: { icon: "flask", word: "Playground", label: "Playground fullscreen" },
+  };
+
+  function stored() {
+    try {
+      var v = window.localStorage.getItem("feynman-view");
+      return VIEWS.indexOf(v) >= 0 ? v : "split";
+    } catch (e) {
+      return "split";
+    }
+  }
+
+  function paintModes() {
+    var cur = document.body.dataset.mview || "split";
+    var bar = $("m-modes");
+    if (!bar) return;
+    var btns = bar.querySelectorAll("button");
+    for (var i = 0; i < btns.length; i++) {
+      btns[i].setAttribute(
+        "aria-pressed",
+        btns[i].dataset.view === cur ? "true" : "false"
+      );
+    }
+  }
+
+  function setView(v, noscroll) {
+    if (VIEWS.indexOf(v) < 0) v = "split";
+    document.body.dataset.mview = v;
+    try {
+      window.localStorage.setItem("feynman-view", v);
+    } catch (e) {
+      /* ignore */
+    }
+    paintModes();
+    if (noscroll) return;
+    try {
+      var reduce =
+        window.matchMedia &&
+        window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      var mobile =
+        window.matchMedia && window.matchMedia("(max-width: 800px)").matches;
+      if (mobile) {
+        var split = document.querySelector("main.split");
+        var target =
+          v === "book" ? $("reader") : v === "lab" ? $("stage") : null;
+        if (split) {
+          split.scrollTo({
+            top: target ? target.offsetTop : 0,
+            behavior: reduce ? "auto" : "smooth",
+          });
+        }
+      }
+    } catch (e) {
+      /* ignore */
+    }
+  }
+
+  window.__setView = setView;
+
+  onReady(function () {
+    var split = document.querySelector("main.split");
+    if (!split) return;
+    var bar = document.createElement("div");
+    bar.id = "m-modes";
+    bar.setAttribute("role", "group");
+    bar.setAttribute("aria-label", "View: split, book or playground");
+    VIEWS.forEach(function (v) {
+      var b = document.createElement("button");
+      b.type = "button";
+      b.dataset.view = v;
+      b.appendChild(riIcon(META[v].icon));
+      var s = document.createElement("span");
+      s.className = "btn-label";
+      s.textContent = META[v].word;
+      b.appendChild(s);
+      b.setAttribute("aria-label", META[v].label);
+      b.setAttribute("title", META[v].label);
+      b.addEventListener("click", function () {
+        setView(v);
+      });
+      bar.appendChild(b);
+    });
+    split.appendChild(bar);
+    setView(stored(), true);
   });
 })();

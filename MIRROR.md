@@ -72,6 +72,11 @@ payload): theme states, cue arrows, info, menu/close, play/pause (mirrored
 through the bundle's label toggles), restart, restore, hold. Text labels are
 kept everywhere for screen readers and clarity.
 
+**View modes** — a bottom Split / Book / Playground switch (sticky bar on
+phones, floating pill on desktop, `body[data-mview]`, persisted): Book hides
+the stage, Playground hides the reader and grows the canvas. Default Split
+is today's layout.
+
 **Mobile (≤800 px): sheet + cue bar, not columns.** The 48 vh stacked stage
 is replaced by a natural-height stage (4:3 canvas capped at 60svh), a sticky
 bottom cue bar (`‹ Prev · Demo n of m · Next ›`, the real transport nodes),

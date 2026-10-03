@@ -1717,3 +1717,91 @@ button svg.ri:not(:last-child) {
     display: none !important;
   }
 }
+
+/* ---- view modes: Split | Book | Playground ---- */
+body[data-mview="book"] #stage,
+body[data-mview="book"] #divider,
+body[data-mview="lab"] #reader,
+body[data-mview="lab"] #divider {
+  display: none;
+}
+
+#m-modes button[aria-pressed="true"] {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: var(--paper);
+}
+
+@media (max-width: 800px) {
+  #m-modes {
+    position: sticky;
+    bottom: 0;
+    z-index: 55;
+    display: flex;
+    gap: 2px;
+    padding: 8px 12px calc(8px + env(safe-area-inset-bottom, 0px));
+    background: var(--paper);
+    border-top: 1px solid var(--rule);
+  }
+
+  #m-modes button {
+    flex: 1;
+    min-height: 48px;
+    font-size: 15px;
+  }
+
+  /* cue bar docks above the modes bar */
+  #m-cuebar {
+    bottom: calc(64px + env(safe-area-inset-bottom, 0px));
+  }
+
+  body[data-mview="lab"] #stage {
+    min-height: calc(100svh - 140px);
+    display: flex;
+    flex-direction: column;
+  }
+
+  body[data-mview="lab"] #canvas-wrap {
+    flex: 1;
+    aspect-ratio: auto;
+    max-height: none;
+    min-height: 240px;
+  }
+
+  body[data-mview="book"] #reader {
+    min-height: calc(100svh - 140px);
+  }
+}
+
+@media (min-width: 801px) {
+  body[data-mview="lab"] #stage {
+    width: 100% !important;
+    min-width: 0;
+  }
+
+  #m-modes {
+    position: fixed;
+    bottom: 16px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 55;
+    display: flex;
+    gap: 2px;
+    padding: 6px;
+    background: var(--paper);
+    border: 1px solid var(--rule);
+    border-radius: 4px;
+    box-shadow: 0 8px 28px -18px rgba(0, 0, 0, 0.5);
+  }
+
+  #m-modes button {
+    min-height: 44px;
+    padding: 8px 16px;
+  }
+}
+
+@media print {
+  #m-modes {
+    display: none !important;
+  }
+}

@@ -65,6 +65,16 @@ paper tones via a computed filter chain.
 and appends a mirror-owned section (about, reading guide, theme, book file,
 links).
 
+**Icons** — inlined RemixIcon 4.6.0 SVG (`currentColor`, ~4 KB, no font
+payload): theme states, cue arrows, info, menu/close, play/pause (mirrored
+through the bundle's label toggles), restart, restore, hold. Text labels are
+kept everywhere for screen readers and clarity.
+
+**Mobile drawer** — under 800 px the header collapses to brand + hamburger;
+chapters/display/about move (same nodes, never clones) into a slide-in
+drawer with kicker sections. Desktop order is restored on resize. All in
+`site/theme.js`; no `index.html` structure changes needed.
+
 **Interaction layer** (`site/theme.js`, progressive enhancement only):
 keyboard-operable divider (arrows, double-click resets), cue counter with
 disabled ends + polite position announcements, slider value exposure for

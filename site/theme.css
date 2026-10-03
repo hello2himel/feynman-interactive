@@ -884,3 +884,161 @@ button:active {
   margin-right: -4px;
   white-space: nowrap;
 }
+
+/* ---- RemixIcon glyphs (inlined SVG, currentColor) ---- */
+svg.ri {
+  width: 1.15em;
+  height: 1.15em;
+  vertical-align: -0.22em;
+  fill: currentColor;
+  flex: none;
+}
+
+button svg.ri:not(:last-child) {
+  margin-right: 0.35em;
+}
+
+/* ---- mobile drawer nav ---- */
+#mnav-open {
+  display: none;
+}
+
+@media (max-width: 800px) {
+  header.bar > select,
+  header.bar > label.sel-label,
+  header.bar > #hold,
+  header.bar > #theme,
+  header.bar > #help-btn,
+  header.bar > #pagelabel {
+    display: none;
+  }
+
+  #mnav-open {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 44px;
+  }
+
+  .brand {
+    font-size: 17px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+}
+
+#mnav-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  background: rgba(26, 23, 18, 0.55);
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.2s ease;
+}
+
+#mnav-scrim.open {
+  opacity: 1;
+  visibility: visible;
+}
+
+:root[data-theme="dark"] #mnav-scrim.open {
+  background: rgba(0, 0, 0, 0.62);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) #mnav-scrim.open {
+    background: rgba(0, 0, 0, 0.62);
+  }
+}
+
+#mnav {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 61;
+  width: min(320px, 88vw);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 14px 18px 20px;
+  overflow-y: auto;
+  background: var(--paper);
+  border-left: 1px solid var(--rule);
+  box-shadow: -18px 0 44px -30px rgba(0, 0, 0, 0.55);
+  transform: translateX(102%);
+  visibility: hidden;
+  transition: transform 0.22s ease;
+}
+
+#mnav.open {
+  transform: none;
+  visibility: visible;
+}
+
+.mnav-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 2px solid var(--rule-strong);
+  padding-bottom: 8px;
+  margin-bottom: 4px;
+}
+
+.mnav-title {
+  font: 600 19px/1.25 var(--display);
+  font-variant: small-caps;
+  letter-spacing: 0.03em;
+}
+
+.mnav-group {
+  margin-top: 10px;
+}
+
+.mnav-kicker {
+  font-variant: small-caps;
+  font-weight: 600;
+  font-size: 14px;
+  letter-spacing: 0.05em;
+  color: var(--accent);
+  margin-bottom: 6px;
+}
+
+.mnav-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.mnav-row select {
+  flex: 1 1 100%;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.mnav-row button {
+  flex: 1 1 auto;
+}
+
+.mnav-row #pagelabel {
+  font-style: italic;
+  color: var(--ink-2);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #mnav,
+  #mnav-scrim {
+    transition: none;
+  }
+}
+
+/* Desktop never shows drawer chrome (placed last to win the cascade). */
+@media (min-width: 801px) {
+  #mnav,
+  #mnav-scrim,
+  #mnav-open {
+    display: none;
+  }
+}

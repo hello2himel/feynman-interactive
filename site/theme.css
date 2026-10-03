@@ -1,0 +1,309 @@
+/* Book styling for the feynman-interactive mirror.
+ *
+ * Replicates the visual language of the author's trig_feynman notes:
+ * EB Garamond prose, Cormorant SC display small-caps, warm paper palette,
+ * oxblood accent, deep-green secondary. Self-hosted woff2 in /fonts/.
+ *
+ * Mirror-owned override stylesheet, loaded AFTER the upstream bundle CSS
+ * (see scripts/theme_patch.py, which injects the <link> into the
+ * upstream-owned site/index.html). The bundle themes itself through CSS
+ * variables, so redefining them here re-skins the whole app.
+ *
+ * Scope: app chrome + reader. KaTeX math, PDF.js internals, the signature
+ * handwriting input and form-comb monospace keep their own styling.
+ */
+
+@font-face {
+  font-family: "EB Garamond";
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url("/fonts/EBGaramond.woff2") format("woff2");
+}
+@font-face {
+  font-family: "EB Garamond";
+  font-style: italic;
+  font-weight: 400 500;
+  font-display: swap;
+  src: url("/fonts/EBGaramond-Italic.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Cormorant SC";
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("/fonts/CormorantSC-Medium.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Cormorant SC";
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("/fonts/CormorantSC-SemiBold.woff2") format("woff2");
+}
+
+:root {
+  --paper: #f6f1e6;
+  --paper-2: #efe9da;
+  --page-bg: #efe9da;
+  --ink: #241f17;
+  --ink-2: #5a5142;
+  --ink-3: #8a7d63;
+  --rule: #c9beaa;
+  --rule-strong: #241f17;
+  --accent: #7a2822;
+  --accent-2: #2b5a4f;
+  --ui: "EB Garamond", "Iowan Old Style", Palatino, "Palatino Linotype", Georgia, "Times New Roman", serif;
+  --serif: "EB Garamond", "Iowan Old Style", Palatino, "Palatino Linotype", Georgia, "Times New Roman", serif;
+  --display: "Cormorant SC", "EB Garamond", serif;
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --paper: #1a1712;
+    --paper-2: #221e17;
+    --page-bg: #221e17;
+    --ink: #e9e1cf;
+    --ink-2: #b7ac96;
+    --ink-3: #7d7460;
+    --rule: #4a4331;
+    --rule-strong: #e9e1cf;
+    --accent: #d98f78;
+    --accent-2: #7fb8a6;
+    color-scheme: dark;
+  }
+}
+
+html {
+  background: var(--paper);
+}
+
+body {
+  background: var(--paper);
+  color: var(--ink);
+  font: 17px/1.6 var(--ui);
+}
+
+/* ---- header bar ---- */
+.bar {
+  padding: 10px 18px;
+  border-bottom: 1px solid var(--rule);
+  background: var(--paper);
+}
+
+.brand {
+  font: 600 20px/1 var(--display);
+  letter-spacing: 0.02em;
+  color: var(--ink);
+}
+
+.brand span {
+  font-family: var(--serif);
+  font-style: italic;
+  font-weight: 400;
+  color: var(--ink-2);
+}
+
+#pagelabel {
+  color: var(--ink-2);
+  font-style: italic;
+}
+
+/* ---- controls ---- */
+select {
+  font-family: var(--serif);
+  background: var(--paper);
+  border: 1px solid var(--rule);
+  border-radius: 2px;
+  color: var(--ink);
+}
+
+button {
+  font-family: var(--serif);
+  background: var(--paper);
+  border: 1px solid var(--rule);
+  color: var(--ink);
+  border-radius: 2px;
+}
+
+button:hover {
+  background: var(--paper-2);
+  color: var(--ink);
+}
+
+button:focus-visible,
+select:focus-visible {
+  outline: 2px solid var(--accent-2);
+  outline-offset: 1px;
+}
+
+button[aria-pressed="true"] {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--paper);
+}
+
+/* transport row reads like the notes' small-caps nav */
+.transport button {
+  font-variant: small-caps;
+  letter-spacing: 0.05em;
+  color: var(--accent);
+}
+
+.transport button:hover {
+  color: var(--ink);
+}
+
+#play {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--paper);
+}
+
+#play:hover {
+  opacity: 0.88;
+  color: var(--paper);
+}
+
+/* ---- stage / demo ---- */
+.stage-head {
+  border-bottom: 1px solid var(--rule);
+}
+
+#demo-title {
+  font: 600 16px/1.25 var(--display);
+  font-variant: small-caps;
+  letter-spacing: 0.02em;
+  text-transform: none;
+  color: var(--accent);
+}
+
+#demo-note {
+  font: 16px/1.65 var(--serif);
+  text-align: justify;
+  hyphens: auto;
+}
+
+.lbl {
+  font: italic 14px/1 var(--serif);
+  color: var(--ink);
+}
+
+#divider {
+  border-left: 1px solid var(--rule);
+}
+
+#divider:hover,
+#divider.drag {
+  border-left-color: var(--accent);
+}
+
+/* ---- data panel table ---- */
+#panel:not(:empty) {
+  border-top: 1px solid var(--rule);
+  padding-top: 8px;
+}
+
+#panel table {
+  font-family: var(--serif);
+}
+
+#panel th {
+  color: var(--accent);
+  font-variant: small-caps;
+  font-weight: 600;
+  border-bottom: 2px solid var(--rule-strong);
+}
+
+#panel th,
+#panel td {
+  border-bottom-color: var(--rule);
+}
+
+#panel tr.hl td {
+  background: var(--paper-2);
+}
+
+/* ---- quiz / predict card ---- */
+#predict {
+  background: var(--paper);
+  border: 1px solid var(--rule);
+  box-shadow: 4px 4px 0 var(--rule);
+}
+
+.predict-q {
+  font: 16px/1.6 var(--serif);
+}
+
+.predict-opts button.right {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--paper);
+}
+
+.predict-opts button.wrong {
+  color: var(--ink-2);
+}
+
+.predict-out {
+  font: 15px/1.6 var(--serif);
+}
+
+/* ---- reader ---- */
+#reader {
+  background: var(--page-bg);
+}
+
+#read-line:before {
+  border-left-color: var(--accent);
+}
+
+/* ---- empty-state + help dialog ---- */
+#missing {
+  background: var(--paper);
+  border: 1px solid var(--rule);
+}
+
+#missing h2 {
+  font: 600 24px/1.25 var(--display);
+  font-variant: small-caps;
+  letter-spacing: 0.02em;
+  color: var(--ink);
+}
+
+dialog {
+  background: var(--paper);
+  color: var(--ink);
+  border: 1px solid var(--rule);
+  font-family: var(--serif);
+}
+
+dialog::backdrop {
+  background: rgba(26, 23, 18, 0.55);
+}
+
+dialog h3 {
+  font: 600 20px/1.25 var(--display);
+  font-variant: small-caps;
+  letter-spacing: 0.03em;
+}
+
+dialog dt {
+  font-variant: small-caps;
+  color: var(--accent);
+}
+
+.bar a,
+#stage a,
+#missing a,
+dialog a {
+  color: var(--accent);
+}
+
+.bar a:hover,
+#stage a:hover,
+#missing a:hover,
+dialog a:hover {
+  color: var(--ink);
+}

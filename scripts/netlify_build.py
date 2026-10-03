@@ -9,8 +9,8 @@ extract_pdf.py.
 - If site/vol1.pdf already exists, nothing is done.
 - Any failure (no network, URL moved, etc.) is a WARNING, not a build
   failure: the app still deploys and shows its built-in "PDF not found" hint.
-- Also re-applies the Spectral theming patch to site/index.html
-  (scripts/spectral_patch.py), in case the sync restored the upstream file.
+- Also re-applies the theme patch to site/index.html
+  (scripts/theme_patch.py), in case the sync restored the upstream file.
 
 Usage (also see netlify.toml):
     pip install pymupdf
@@ -27,7 +27,7 @@ TARGET = os.path.join(ROOT, "site", "vol1.pdf")
 DEFAULT_PDF_URL = "https://antilogicalism.com/wp-content/uploads/2018/04/feynman-lectures.pdf"
 
 sys.path.insert(0, os.path.join(ROOT, "scripts"))
-from spectral_patch import apply_patch  # noqa: E402
+from theme_patch import apply_patch  # noqa: E402
 
 
 def main() -> int:

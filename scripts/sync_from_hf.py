@@ -6,10 +6,10 @@ overlays it onto this repo, preserving mirror-specific files:
 
   kept as-is: .git/, .github/, netlify.toml, scripts/, MIRROR.md,
               .gitignore, .gitattributes (mirror stores wasm/fonts without LFS),
-              site/spectral.css, site/fonts/ (mirror theming)
+              site/theme.css, site/fonts/ (mirror theming)
 
-  After overlaying, the Spectral <link> patch is re-applied to
-  site/index.html (scripts/spectral_patch.py), since that file is
+  After overlaying, the theme <link> patch is re-applied to
+  site/index.html (scripts/theme_patch.py), since that file is
   upstream-owned and the overlay restores the unpatched version.
 
 Everything else is made to match upstream exactly, including deleting files
@@ -38,14 +38,14 @@ KEEP = {
     "MIRROR.md",
     ".gitignore",
     ".gitattributes",
-    "site/spectral.css",
+    "site/theme.css",
     "site/fonts",
 }
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 sys.path.insert(0, os.path.join(ROOT, "scripts"))
-from spectral_patch import apply_patch  # noqa: E402
+from theme_patch import apply_patch  # noqa: E402
 
 
 def kept(rel: str) -> bool:

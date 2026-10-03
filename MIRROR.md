@@ -39,20 +39,24 @@ Or one click (replace `<user>` after forking):
 
 [![Deploy to Netlify](https://www.netlify.com/img/deploy/button.svg)](https://app.netlify.com/start/deploy?repository=https://github.com/hello2himel/feynman-interactive)
 
-## Theming: Spectral typeface
+## Theming: book styling (EB Garamond + Cormorant SC)
 
-The whole site is set in the **Spectral** serif family (self-hosted woff2 in
-`site/fonts/`, latin subsets only, ~160 KB total), except math: KaTeX keeps
+The whole site uses the visual language of the author's trig notes:
+**EB Garamond** prose, **Cormorant SC** display small-caps, warm paper
+palette (`#f6f1e6`), oxblood accent (`#7a2822`), deep-green secondary
+(`#2b5a4f`), plus a matching dark mode. Fonts are self-hosted woff2 in
+`site/fonts/` (latin subsets, ~134 KB total). Math is excluded: KaTeX keeps
 its own fonts, and PDF.js internals / the signature handwriting input / form
 monospace are untouched.
 
-How it works: the bundle themes everything through the `--ui` and `--serif`
-CSS variables, so the mirror-owned `site/spectral.css` (loaded after the
-bundle CSS) just redefines those two variables plus `@font-face` rules.
-`site/index.html` is upstream-owned and gets clobbered on every sync, so the
-`<link>` injection is an idempotent patch (`scripts/spectral_patch.py`)
-re-applied by the sync workflow and by the Netlify build — never a one-time
-edit.
+How it works: the bundle themes itself through CSS variables (`--paper`,
+`--ink`, `--rule`, `--ui`, `--serif`), so the mirror-owned `site/theme.css`
+(loaded after the bundle CSS) redefines the palette + type stacks and
+restyles the header, buttons, demo headings, data table, quiz card, reader
+and dialogs. `site/index.html` is upstream-owned and gets clobbered on every
+sync, so the `<link>` injection is an idempotent patch
+(`scripts/theme_patch.py`) re-applied by the sync workflow and by the
+Netlify build — never a one-time edit.
 
 ## Local preview
 
@@ -74,10 +78,10 @@ This is a third-party mirror. A scheduled workflow
 (`.github/workflows/sync-from-hf.yml`, every 12 h + manual dispatch)
 downloads the current upstream Space snapshot and overlays it here, preserving
 mirror-only files (`netlify.toml`, `scripts/`, `.github/`, `MIRROR.md`,
-`.gitignore`, `.gitattributes`, `site/spectral.css`, `site/fonts/`).
-It never pushes anything to Hugging Face. After overlaying, the Spectral
+`.gitignore`, `.gitattributes`, `site/theme.css`, `site/fonts/`).
+It never pushes anything to Hugging Face. After overlaying, the theme
 `<link>` patch is re-applied to the upstream-owned `site/index.html`
-(`scripts/spectral_patch.py`), so theming survives syncs.
+(`scripts/theme_patch.py`), so theming survives syncs.
 
 Run a sync manually any time:
 
@@ -96,6 +100,6 @@ git push
   serves them with no extra setup. See `.gitattributes`.
 - Upstream files (`README.md`, `Dockerfile`, `serve.py`, `extract_pdf.py`,
   `site/`) are verbatim copies and get overwritten on each sync — except
-  `site/index.html`, which additionally carries the one-line Spectral
+  `site/index.html`, which additionally carries the one-line theme
   stylesheet `<link>` (re-applied automatically after every sync, see above).
   Mirror docs live in this file so they survive syncs.

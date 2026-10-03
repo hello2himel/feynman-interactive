@@ -2,19 +2,33 @@
 # Publish the prebuilt static app in site/. No framework, no bundling.
 [build]
   publish = "site"
-  command = "pip install -q pymupdf && python3 scripts/netlify_build.py"
+  command = "python3 -c \"import fitz\" 2>/dev/null || pip install -q pymupdf; python3 scripts/netlify_build.py"
 
-# Hashed build assets can be cached long; everything else revalidates
-# (mirrors serve.py cache behaviour on Hugging Face).
+# Revalidation default comes first: Netlify lets later matching rules
+# override it, so the specific cache policies below win for their paths.
+# (This also mirrors serve.py: long cache for hashed assets, revalidate rest.)
+[[headers]]
+  for = "/*"
+  [headers.values]
+    Cache-Control = "no-cache"
+
+# Hashed build assets can be cached long.
 [[headers]]
   for = "/assets/*"
   [headers.values]
     Cache-Control = "public, max-age=31536000, immutable"
 
+# Unhashed but rarely-changing statics: bounded caching (NOT immutable —
+# pdfjs files change content without changing names on upstream syncs).
 [[headers]]
-  for = "/*"
+  for = "/fonts/*"
   [headers.values]
-    Cache-Control = "no-cache"
+    Cache-Control = "public, max-age=604800"
+
+[[headers]]
+  for = "/pdfjs/*"
+  [headers.values]
+    Cache-Control = "public, max-age=86400"
 
 # Correct MIME types for the PDF.js worker and wasm helpers
 # (mirrors the mimetypes overrides in serve.py).

@@ -3,22 +3,23 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="preload" href="/fonts/EBGaramond.woff2" as="font" type="font/woff2" crossorigin />
     <title>Feynman Vol. I · Interactive</title>
     <script type="module" crossorigin src="/assets/index-xO6QomFj.js"></script>
-    <script src="/theme.js"></script>
     <link rel="stylesheet" crossorigin href="/assets/index-ewuw3MON.css">
     <link rel="stylesheet" href="/theme.css" />
+    <script src="/theme.js"></script>
   </head>
   <body>
     <header class="bar">
       <div class="brand">Feynman Lectures <span>Vol. I</span></div>
-      <select id="chapter" aria-label="Chapter"></select>
-      <select id="section" aria-label="Section"></select>
+      <label class="sel-label" for="chapter">Ch.</label><select id="chapter" aria-label="Chapter" title="Chapter (all 14)"></select>
+      <label class="sel-label" for="section">§</label><select id="section" aria-label="Section" title="Section within this chapter"></select>
       <div class="spacer"></div>
-      <span id="pagelabel" class="muted"></span>
-      <button id="hold" aria-pressed="false" title="Keep the current demo while you scroll (H)">Hold demo</button>
+      <span id="pagelabel" class="muted" role="status" aria-live="polite" aria-atomic="true"></span>
+      <button id="hold" aria-pressed="false" title="Hold the current demo while you scroll (H)">Hold Demo</button>
       <button id="theme" title="Colour theme: follows your system. Activate to pin Light or Dark.">◐ System</button>
-      <button id="help-btn" title="About this book &amp; keyboard shortcuts">i</button>
+      <button aria-haspopup="dialog" aria-label="About this book and keyboard shortcuts" id="help-btn" title="About this book &amp; keyboard shortcuts">i</button>
     </header>
 
     <main class="split">
@@ -26,6 +27,7 @@
         <div class="stage-head">
           <div id="demo-title"></div>
           <div id="demo-note"></div>
+      <p id="demo-orphan" hidden>The book pages aren&rsquo;t loaded, so this demo runs on its own &mdash; <em>J</em> / <em>K</em> still step through the demos.</p>
         </div>
         <div id="canvas-wrap">
           <div id="labels"></div>
@@ -35,48 +37,62 @@
           <div class="transport">
             <button id="play">Pause</button>
             <button id="reset">Restart</button>
-            <button id="restore" hidden title="Undo your slider changes and return to the values for this part of the text">Back to text values</button>
+            <button id="restore" hidden title="Undo your slider changes and restore the values described in the text">Restore Book Values</button>
             <span class="spacer"></span>
-            <button id="prev-cue" title="Previous demo point (K)">↑</button>
-            <button id="next-cue" title="Next demo point (J)">↓</button>
+            <button id="prev-cue" title="Previous demo point (K)" aria-label="Previous demo point (K)">↑</button>
+            <button id="next-cue" title="Next demo point (J)" aria-label="Next demo point (J)">↓</button>
+      <span id="cue-count" aria-hidden="true"></span>
+      <div id="pos-live" class="sr-only" role="status"></div>
           </div>
           <div id="controls"></div>
           <div id="panel"></div>
         </div>
       </section>
 
-      <div id="divider" role="separator" aria-orientation="vertical" title="Drag to resize"></div>
+      <div id="divider" role="separator" aria-orientation="vertical" tabindex="0" aria-label="Resize demo and text panes. Left and right arrows." aria-valuemin="25" aria-valuemax="75" aria-valuenow="46" title="Drag to resize"></div>
 
       <section id="reader" aria-label="Lecture text">
         <div id="read-line" aria-hidden="true"></div>
         <div id="column"></div>
         <div id="missing" hidden>
-          <h2>PDF not found</h2>
-          <p>Run <code>python3 scripts/extract_pdf.py ~/Downloads/feynman-lectures.pdf</code> to create <code>public/vol1.pdf</code>, then reload.</p>
+          <h2>Reading pages aren&rsquo;t loaded</h2>
+          <p>The demos on the left still work &mdash; pick a chapter above, or press
+          <em>J</em> / <em>K</em> to step through demo points.</p>
+          <p>To add the book pages (your own copy, for copyright reasons): run
+          <code>python3 extract_pdf.py /path/to/feynman-lectures.pdf site/vol1.pdf</code>,
+          then reload. Deployed copies can set a <code>PDF_URL</code> instead &mdash;
+          see the <a href="https://github.com/hello2himel/feynman-interactive#the-book-file">README</a>.</p>
+          <p><button id="retry-pdf" type="button">Retry loading pages</button></p>
         </div>
       </section>
     </main>
 
-    <dialog id="help">
-      <h3>Shortcuts</h3>
+    <dialog id="help" aria-labelledby="help-title">
+      <h3 id="help-title">Shortcuts &amp; About</h3>
       <dl>
         <dt>J / K</dt><dd>Next / previous demo point in the text</dd>
         <dt>Space</dt><dd>Play / pause the demo</dd>
         <dt>R</dt><dd>Restart the demo</dd>
         <dt>H</dt><dd>Hold the current demo while scrolling</dd>
         <dt>Drag / scroll on demo</dt><dd>Pan · zoom (2D) or orbit · zoom (3D)</dd>
+        <dt>?</dt><dd>Open this panel</dd>
+        <dt>Esc</dt><dd>Close this panel</dd>
       </dl>
-      <p class="muted">The marks in the left margin of the pages show where a demo changes. Click one to jump there.</p>
+      <p class="muted">The marks in the left margin show each demo point. Click one to jump there.</p>
       <div id="mirror-info">
+        <p class="orientation">This page pairs each marked passage with a runnable demo.
+        If the right pane has no pages loaded, the left pane still works &mdash; start
+        with <em>J</em> / <em>K</em>.</p>
         <h4>About this book</h4>
         <p>Chapters 1&ndash;14 of the <em>Feynman Lectures on Physics</em>, Vol. I, with
         scroll-synced wireframe demos. The left pane runs the demo for whatever you are
         reading; the right pane is the book itself.</p>
         <h4>Reading with the demos</h4>
-        <p>Scroll the book and the demo follows each marked point &mdash; <em>J</em> /
+        <p>Scroll the book and the demo follows each demo point &mdash; <em>J</em> /
         <em>K</em> jump between them. <em>Hold</em> pins the current demo while you scroll.
-        Drag the demo to orbit or zoom; its sliders rewrite the scene, and
-        <em>Back to text values</em> restores what the text describes.</p>
+        Drag the demo to orbit or zoom (touch: one finger orbits, pinch zooms, two fingers
+        pan); its sliders rewrite the scene, and <em>Restore Book Values</em> undoes your
+        changes and restores what the text describes.</p>
         <h4>Light &amp; dark</h4>
         <p>The pages follow your system theme. Use the header control to pin
         <em>Light</em> or <em>Dark</em>; dark mode reprints the scanned pages and the demo in the dark paper tones.</p>
@@ -90,7 +106,7 @@
         This mirror:
         <a href="https://github.com/hello2himel/feynman-interactive">hello2himel/feynman-interactive</a></p>
       </div>
-      <form method="dialog"><button>Close</button></form>
+      <form method="dialog"><button autofocus>Close (Esc)</button></form>
     </dialog>
 
   </body>

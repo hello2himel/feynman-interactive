@@ -65,6 +65,15 @@ paper tones via a computed filter chain.
 and appends a mirror-owned section (about, reading guide, theme, book file,
 links).
 
+**Interaction layer** (`site/theme.js`, progressive enhancement only):
+keyboard-operable divider (arrows, double-click resets), cue counter with
+disabled ends + polite position announcements, slider value exposure for
+assistive tech, predict retry, reduced-motion start-paused, shortcuts
+suspended behind open dialogs, one-time first-visit hint, orphan-demo
+banner and PDF retry when the book file is absent. Upstream text patches
+(plain-English labels, accessible names, correct PDF guidance) live in
+`scripts/theme_patch.py` and are skipped silently if upstream rewords.
+
 `site/index.html` is upstream-owned and gets clobbered on every sync, so all
 of the above are idempotent patches (`scripts/theme_patch.py`) re-applied by
 the sync workflow and by the Netlify build — never one-time edits. The same

@@ -386,3 +386,501 @@ dialog a {
 dialog a:hover {
   color: var(--ink);
 }
+
+/* ================= Audit fixes (mirror-owned overrides) ================= */
+
+/* ---- control labels: small-caps accent kickers, oxblood widgets ---- */
+#controls .ctl-name {
+  font-variant: small-caps;
+  letter-spacing: 0.04em;
+  font-weight: 600;
+  font-size: 14.5px;
+  color: var(--accent);
+}
+
+#controls .ctl-val {
+  font-style: italic;
+  color: var(--ink-2);
+  font-size: 14.5px;
+}
+
+#controls input[type="range"],
+#controls input[type="checkbox"] {
+  accent-color: var(--accent);
+}
+
+#controls .ctl {
+  padding-block: 6px;
+}
+
+#controls input[type="range"] {
+  min-height: 44px;
+  width: min(160px, 38vw);
+}
+
+#controls input[type="range"]::-webkit-slider-thumb {
+  width: 28px;
+  height: 28px;
+}
+
+#controls input[type="range"]::-moz-range-thumb {
+  width: 28px;
+  height: 28px;
+}
+
+input[type="range"]:focus-visible,
+input[type="checkbox"]:focus-visible,
+a:focus-visible {
+  outline: 2px solid var(--accent-2);
+  outline-offset: 2px;
+}
+
+/* ---- data table: full-size book table ---- */
+#panel table {
+  font-family: var(--serif);
+  font-size: 15px;
+  line-height: 1.55;
+  border-top: 2px solid var(--rule-strong);
+}
+
+#panel th,
+#panel td {
+  padding: 4px 10px;
+}
+
+#panel tr:last-child td {
+  border-bottom: 2px solid var(--rule-strong);
+}
+
+#panel:not(:empty) {
+  border-top: none;
+  padding-top: 0;
+  margin-top: 12px;
+}
+
+/* ---- predict card: flat book box, explicit verdicts ---- */
+#predict {
+  background: var(--paper-2);
+  border: 1px solid var(--rule);
+  border-radius: 2px;
+  box-shadow: none;
+  max-height: calc(100% - 28px);
+  overflow-y: auto;
+}
+
+.predict-kicker {
+  font-family: var(--serif);
+  font-variant: small-caps;
+  font-style: italic;
+  font-weight: 600;
+  font-size: 15px;
+  letter-spacing: 0.02em;
+  color: var(--accent-2);
+}
+
+.lbl.muted {
+  font-family: var(--serif);
+  font-size: 12.5px;
+  color: var(--ink-2);
+}
+
+.predict-opts button.right::before {
+  content: "\2713\00a0";
+}
+
+.predict-opts button.wrong {
+  border: 1px solid var(--accent-2);
+  text-decoration: none;
+}
+
+.predict-opts button.wrong::before {
+  content: "\2715\00a0";
+}
+
+.predict-opts button:disabled {
+  cursor: default;
+  opacity: 0.75;
+}
+
+.predict-opts button:not(.right):disabled {
+  opacity: 0.55;
+}
+
+.predict-retry {
+  border: 1px dashed var(--accent-2);
+  color: var(--accent-2);
+  margin-top: 8px;
+}
+
+.page .textLayer ::selection {
+  background: color-mix(in srgb, var(--accent) 28%, transparent);
+}
+
+/* ---- margin cue marks: accent system, real targets, focus tips ---- */
+.cue-mark::after {
+  content: "";
+  position: absolute;
+  inset: -13px -11px;
+}
+
+.cue-mark:before {
+  width: 9px;
+  height: 9px;
+  border-color: var(--accent);
+  background: var(--paper);
+}
+
+.cue-mark.active:before {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+.cue-mark.predict:before {
+  border-style: double;
+  border-width: 3px;
+}
+
+.cue-mark:focus-visible {
+  outline: 2px solid var(--accent-2);
+  outline-offset: 1px;
+}
+
+.cue-mark:hover .tip,
+.cue-mark:focus-visible .tip,
+.cue-mark:focus-within .tip,
+.cue-mark.active .tip {
+  display: block;
+}
+
+.cue-mark .tip {
+  background: var(--paper);
+  color: var(--ink);
+  border: 1px solid var(--rule);
+  border-radius: 2px;
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: 13.5px;
+}
+
+.page-label {
+  color: var(--ink-2);
+  font-style: italic;
+}
+
+/* ---- page frame: warm rule, soft lift, calmer rhythm ---- */
+#column .page {
+  background: var(--paper);
+  border: 1px solid var(--rule);
+  box-shadow: 0 1px 2px rgba(36, 31, 23, 0.18), 0 4px 14px rgba(36, 31, 23, 0.12);
+  margin-bottom: 22px;
+}
+
+#reader {
+  overflow-x: clip;
+}
+
+#read-line:before {
+  border-width: 6px;
+  border-left-width: 9px;
+  left: 6px;
+  opacity: 0.9;
+}
+
+#read-line:after {
+  content: "";
+  position: absolute;
+  left: 14px;
+  right: 0;
+  top: 0;
+  border-top: 1px dashed var(--accent);
+  opacity: 0.6;
+}
+
+/* unrendered pages: hatched placeholder instead of blank paper */
+#column .page:not(:has(canvas)) .clip {
+  background: repeating-linear-gradient(45deg, var(--paper-2), var(--paper-2) 12px, var(--paper) 12px, var(--paper) 24px);
+}
+
+/* ---- header/transport touch targets + wrapping ---- */
+.bar button,
+.transport button,
+dialog button {
+  min-height: 44px;
+  min-width: 44px;
+}
+
+.bar button,
+.transport button {
+  padding: 8px 14px;
+}
+
+select {
+  min-height: 44px;
+  padding: 8px 10px;
+}
+
+#help-btn,
+#prev-cue,
+#next-cue {
+  min-width: 44px;
+  text-align: center;
+}
+
+#prev-cue,
+#next-cue {
+  font-size: 17px;
+}
+
+.transport {
+  flex-wrap: wrap;
+  row-gap: 6px;
+  min-height: 2.4em;
+}
+
+.transport .spacer {
+  flex-basis: 0;
+  min-width: 0;
+}
+
+.transport #prev-cue:disabled,
+.transport #next-cue:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+#cue-count {
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-2);
+  font-style: italic;
+  white-space: nowrap;
+}
+
+#restore[hidden] {
+  display: inline-block;
+  visibility: hidden;
+}
+
+#restore:not([hidden]) {
+  border: 1px dashed var(--accent-2);
+  color: var(--accent-2);
+}
+
+#hold[aria-pressed="true"] {
+  background: var(--accent-2);
+  border-color: var(--accent-2);
+  color: var(--paper);
+}
+
+#hold[aria-pressed="true"]::after {
+  content: " \25cf";
+}
+
+#canvas-wrap canvas {
+  cursor: grab;
+  touch-action: pan-y !important;
+}
+
+#canvas-wrap canvas:active {
+  cursor: grabbing;
+}
+
+/* ---- first-visit hint + orphan demo banner ---- */
+#first-hint,
+#demo-orphan {
+  border: 1px solid var(--rule);
+  background: var(--paper-2);
+  border-radius: 2px;
+  padding: 6px 12px;
+  margin: 8px 18px 0;
+  font-size: 15px;
+  font-style: italic;
+  color: var(--ink-2);
+}
+
+#first-hint button {
+  min-height: 0;
+  padding: 2px 10px;
+  margin-left: 8px;
+  font-style: normal;
+}
+
+#controls:empty::after {
+  content: "Demo controls appear here.";
+  color: var(--ink-2);
+  font-style: italic;
+}
+
+#demo-title:empty::after {
+  content: "Loading demo\2026";
+  color: var(--ink-2);
+  font-style: italic;
+  font-family: var(--serif);
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+/* ---- missing-PDF card body ---- */
+#missing p {
+  font-size: 16px;
+  line-height: 1.6;
+  margin: 8px 0;
+}
+
+#missing code {
+  font-size: 14px;
+  user-select: all;
+}
+
+#retry-pdf {
+  border-color: var(--accent);
+  color: var(--accent);
+  margin-top: 8px;
+}
+
+/* ---- gutter rhythm (desktop only: bundle owns mobile padding) ---- */
+@media (min-width: 801px) {
+  .stage-head {
+    padding: 12px 18px 12px;
+  }
+
+  .stage-foot {
+    border-top: 1px solid var(--rule);
+    padding: 10px 18px 14px;
+  }
+}
+
+@media (max-width: 1100px) {
+  .bar {
+    flex-wrap: wrap;
+    row-gap: 6px;
+  }
+}
+
+@media (max-width: 800px) {
+  #predict {
+    bottom: 8px;
+    left: 8px;
+    right: 8px;
+    padding: 10px 12px;
+  }
+
+  #canvas-wrap {
+    min-height: 120px;
+  }
+
+  .cue-mark .tip {
+    max-width: min(300px, 62vw);
+  }
+}
+
+/* ---- divider: grab area, dark hover, focus ---- */
+#divider {
+  position: relative;
+  touch-action: none;
+}
+
+#divider::after {
+  content: "";
+  position: absolute;
+  inset: 0 -10px;
+}
+
+#divider:hover,
+#divider.drag {
+  background: var(--paper-2);
+}
+
+#divider:focus-visible {
+  outline: 2px solid var(--accent-2);
+  outline-offset: -2px;
+  border-left-color: var(--accent-2);
+}
+
+/* ---- demo title scale (must read as a heading, not a caption) ---- */
+#demo-title {
+  font-size: 19px;
+  letter-spacing: 0.03em;
+}
+
+#demo-note {
+  font-size: 17px;
+  line-height: 1.7;
+}
+
+/* ---- dialog viewport cap ---- */
+dialog {
+  max-width: min(460px, calc(100vw - 2rem));
+  box-sizing: border-box;
+}
+
+#mirror-info p,
+dialog dl dd {
+  overflow-wrap: anywhere;
+}
+
+/* ---- print: book only ---- */
+@media print {
+  .bar,
+  #stage,
+  #divider,
+  #read-line,
+  .cue-mark,
+  .page-label,
+  #first-hint {
+    display: none !important;
+  }
+
+  .split {
+    display: block;
+  }
+
+  #reader {
+    overflow: visible;
+    background: #fff;
+  }
+
+  #column {
+    max-width: none;
+    padding: 0;
+  }
+
+  #column .page {
+    box-shadow: none;
+    border: 0;
+    margin: 0 0 12px;
+    break-inside: avoid;
+  }
+
+  #column .page canvas,
+  #canvas-wrap canvas {
+    filter: none !important;
+  }
+
+  #missing {
+    margin: 2em auto;
+  }
+}
+
+/* ---- visually hidden (live region etc.) ---- */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+button:active {
+  filter: brightness(0.92);
+}
+
+/* ---- visible select labels ---- */
+.sel-label {
+  font-variant: small-caps;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--ink-2);
+  margin-right: -4px;
+  white-space: nowrap;
+}

@@ -678,14 +678,15 @@ function riIcon(name) {
     openBtn.setAttribute("aria-controls", "mnav");
     openBtn.appendChild(riIcon("menu"));
 
-    /* ---------- sticky mobile cue bar (real transport nodes) ---------- */
+    /* ---------- sticky mobile cue bar (split-level so it survives
+     * exclusive views; real transport nodes) ---------- */
     var stage = document.querySelector("main.split section#stage");
     var transport = document.querySelector(".transport");
     var cuebar = document.createElement("div");
     cuebar.id = "m-cuebar";
     cuebar.setAttribute("role", "group");
     cuebar.setAttribute("aria-label", "Demo points");
-    if (stage) stage.appendChild(cuebar);
+    if (stage && stage.parentNode) stage.parentNode.appendChild(cuebar);
 
     /* ---------- quiz bottom sheet (real #predict node) ---------- */
     var quizScrim = document.createElement("div");
@@ -1101,6 +1102,7 @@ function riIcon(name) {
 
   function setView(v, noscroll) {
     if (VIEWS.indexOf(v) < 0) v = "split";
+    var prevView = document.body.dataset.mview || "split";
     document.body.dataset.mview = v;
     try {
       window.localStorage.setItem("feynman-view", v);
@@ -1108,6 +1110,23 @@ function riIcon(name) {
       /* ignore */
     }
     paintModes();
+    /* Book mode pauses a playing demo (battery + low-end GPUs); leaving
+     * restores it only if we were the ones who paused it. */
+    try {
+      var play = $("play");
+      var playing =
+        !!play && play.textContent.trim().toLowerCase() === "pause";
+      if (v === "book" && prevView !== "book") {
+        window.__pausedForBook = playing;
+        if (playing && play) play.click();
+      } else if (prevView === "book" && v !== "book" && window.__pausedForBook) {
+        window.__pausedForBook = false;
+        var p2 = $("play");
+        if (p2 && p2.textContent.trim().toLowerCase() === "play") p2.click();
+      }
+    } catch (e) {
+      /* ignore */
+    }
     if (noscroll) return;
     try {
       var reduce =
@@ -1139,7 +1158,7 @@ function riIcon(name) {
     var bar = document.createElement("div");
     bar.id = "m-modes";
     bar.setAttribute("role", "group");
-    bar.setAttribute("aria-label", "View: split, book or playground");
+    bar.setAttribute("aria-label", "View mode");
     VIEWS.forEach(function (v) {
       var b = document.createElement("button");
       b.type = "button";
@@ -1158,6 +1177,33 @@ function riIcon(name) {
     });
     split.appendChild(bar);
     setView(stored(), true);
+    /* Desktop: the switch lives in the header (never covering content);
+     * mobile keeps the bottom bar. Moves the same node both ways. */
+    var placeModes = function (mobile) {
+      if (mobile) {
+        if (bar.parentNode !== split) split.appendChild(bar);
+      } else {
+        var theme = $("theme");
+        if (theme && theme.parentNode) {
+          var hp = theme.parentNode;
+          if (bar.parentNode !== hp || bar.nextSibling !== theme) {
+            hp.insertBefore(bar, theme);
+          }
+        }
+      }
+    };
+    var mmq = window.matchMedia
+      ? window.matchMedia("(max-width: 800px)")
+      : { matches: true, addEventListener: function () {} };
+    var applyModesPlace = function () {
+      placeModes(mmq.matches);
+      /* Split is desktop-only; phones fall back to the demo-first view. */
+      if (mmq.matches && (document.body.dataset.mview || "split") === "split") {
+        setView("lab", true);
+      }
+    };
+    if (mmq.addEventListener) mmq.addEventListener("change", applyModesPlace);
+    applyModesPlace();
   });
 })();
 

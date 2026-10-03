@@ -1186,23 +1186,27 @@ button svg.ri:not(:last-child) {
   display: none;
 }
 
-/* ---- kill the 48vh trap: the column scrolls, panes keep natural height ---- */
+/* ---- mobile views are exclusive fullscreen panes (the bundle navigates
+ * by scrolling #reader, so stacked panes would break every cue jump and
+ * scroll-follow). Each visible pane fills the split and scrolls itself. ---- */
 @media (max-width: 800px) {
   main.split {
-    overflow-y: auto;
     overscroll-behavior: contain;
   }
 
-  #stage {
-    height: auto;
+  body[data-mview="book"] #reader,
+  body[data-mview="lab"] #stage {
+    flex: 1;
     min-height: 0;
-    flex: none;
+    min-width: 0;
+    overflow-y: auto;
   }
 
-  #reader {
-    flex: none;
-    overflow: visible;
+  /* Split is desktop-only; phones get Book / Playground. */
+  #m-modes button[data-view="split"] {
+    display: none;
   }
+}
 
   #canvas-wrap {
     aspect-ratio: 4 / 3;
@@ -1422,6 +1426,10 @@ button svg.ri:not(:last-child) {
   /* ---- missing card v2 + orphan spans + read-line demotion ---- */
   #demo-orphan {
     display: none;
+  }
+
+  body[data-mview="lab"] #demo-orphan {
+    display: block;
   }
 
   .mob-only {
@@ -1721,9 +1729,19 @@ button svg.ri:not(:last-child) {
 /* ---- view modes: Split | Book | Playground ---- */
 body[data-mview="book"] #stage,
 body[data-mview="book"] #divider,
-body[data-mview="lab"] #reader,
 body[data-mview="lab"] #divider {
   display: none;
+}
+
+/* Lab keeps the reader laid out but invisible: the bundle navigates ONLY by
+ * scrolling #reader, so display:none would silently break every cue jump,
+ * scroll-follow and J/K. visibility:hidden preserves layout, offsets and
+ * scroll events while showing nothing. */
+body[data-mview="lab"] #reader {
+  position: absolute;
+  inset: 0;
+  overflow-y: auto;
+  visibility: hidden;
 }
 
 #m-modes button[aria-pressed="true"] {
@@ -1779,24 +1797,37 @@ body[data-mview="lab"] #divider {
     min-width: 0;
   }
 
-  #m-modes {
-    position: fixed;
-    bottom: 16px;
-    left: 50%;
-    transform: translateX(-50%);
-    z-index: 55;
+  /* modes live in the header on desktop: joined segmented group */
+  header.bar > #m-modes {
+    position: static;
+    transform: none;
     display: flex;
-    gap: 2px;
-    padding: 6px;
-    background: var(--paper);
-    border: 1px solid var(--rule);
-    border-radius: 4px;
-    box-shadow: 0 8px 28px -18px rgba(0, 0, 0, 0.5);
+    gap: 0;
+    padding: 0;
+    background: none;
+    border: 0;
+    box-shadow: none;
   }
 
-  #m-modes button {
-    min-height: 44px;
-    padding: 8px 16px;
+  header.bar > #m-modes button {
+    min-height: 40px;
+    padding: 6px 12px;
+    border-radius: 0;
+    margin-left: -1px;
+  }
+
+  header.bar > #m-modes button:first-child {
+    border-radius: 2px 0 0 2px;
+    margin-left: 0;
+  }
+
+  header.bar > #m-modes button:last-child {
+    border-radius: 0 2px 2px 0;
+  }
+
+  header.bar > #m-modes button[aria-pressed="true"] {
+    position: relative;
+    z-index: 1;
   }
 }
 

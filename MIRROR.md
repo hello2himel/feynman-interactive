@@ -81,10 +81,12 @@ caps so it can never trap the page).
 placeholder instead of white flash, a 0.25 s content fade on cue changes,
 and chapter changes scroll back to the stage on phones.
 
-**View modes** — a bottom Split / Book / Playground switch (sticky bar on
-phones, floating pill on desktop, `body[data-mview]`, persisted): Book hides
-the stage, Playground hides the reader and grows the canvas. Default Split
-is today's layout.
+**View modes** — Split / Book / Playground (`body[data-mview]`, persisted):
+segmented group in the desktop header, sticky bar on phones. Book hides
+the stage (pausing a playing demo, resumed on return); Playground keeps the
+reader laid out but invisible, because the bundle navigates ONLY by
+scrolling `#reader` — `display:none` would silently break every cue jump.
+Default Split on desktop, Playground on phones.
 
 **Mobile (≤800 px): sheet + cue bar, not columns.** The 48 vh stacked stage
 is replaced by a natural-height stage (4:3 canvas capped at 60svh), a sticky

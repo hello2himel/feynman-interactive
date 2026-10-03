@@ -140,6 +140,19 @@ def apply_patch() -> bool:
         html = html.replace(anchor, anchor + THEME_JS_LINE, 1)
         changed = True
 
+    # 2b. section table (deferred; runs before DOMContentLoaded listeners).
+    # Must follow op 2: it anchors on the theme.js line.
+    if "/nav-data.js" not in html:
+        anchor = "\n" + THEME_JS_LINE
+        if anchor not in html:
+            raise SystemExit("theme_patch: theme.js line not found in site/index.html")
+        html = html.replace(
+            anchor,
+            '\n    <script src="/nav-data.js" defer></script>' + anchor,
+            1,
+        )
+        changed = True
+
     # 3. font preload after the viewport meta.
     if 'rel="preload"' not in html:
         anchor = (

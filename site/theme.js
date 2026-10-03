@@ -15,6 +15,7 @@ RI['pause'] = '<path d="M6 5H8V19H6V5ZM16 5H18V19H16V5Z"/>';
 RI['book-open'] = '<path d="M13 21V23H11V21H3C2.44772 21 2 20.5523 2 20V4C2 3.44772 2.44772 3 3 3H9C10.1947 3 11.2671 3.52375 12 4.35418C12.7329 3.52375 13.8053 3 15 3H21C21.5523 3 22 3.44772 22 4V20C22 20.5523 21.5523 21 21 21H13ZM20 19V5H15C13.8954 5 13 5.89543 13 7V19H20ZM11 19V7C11 5.89543 10.1046 5 9 5H4V19H11Z"/>';
 RI['flask'] = '<path d="M15.9994 2V4H14.9994V7.24291C14.9994 8.40051 15.2506 9.54432 15.7357 10.5954L20.017 19.8714C20.3641 20.6236 20.0358 21.5148 19.2836 21.8619C19.0865 21.9529 18.8721 22 18.655 22H5.34375C4.51532 22 3.84375 21.3284 3.84375 20.5C3.84375 20.2829 3.89085 20.0685 3.98181 19.8714L8.26306 10.5954C8.74816 9.54432 8.99939 8.40051 8.99939 7.24291V4H7.99939V2H15.9994ZM13.3873 10.0012H10.6115C10.5072 10.3644 10.3823 10.7221 10.2371 11.0724L10.079 11.4335L6.12439 20H17.8734L13.9198 11.4335C13.7054 10.9691 13.5276 10.4902 13.3873 10.0012ZM10.9994 7.24291C10.9994 7.49626 10.9898 7.7491 10.9706 8.00087H13.0282C13.0189 7.87982 13.0119 7.75852 13.0072 7.63704L12.9994 7.24291V4H10.9994V7.24291Z"/>';
 RI['layout-column'] = '<path d="M11 5H5V19H11V5ZM13 5V19H19V5H13ZM4 3H20C20.5523 3 21 3.44772 21 4V20C21 20.5523 20.5523 21 20 21H4C3.44772 21 3 20.5523 3 20V4C3 3.44772 3.44772 3 4 3Z"/>';
+RI['chevron-down'] = '<path d="M11.9999 13.1714L16.9497 8.22168L18.3639 9.63589L11.9999 15.9999L5.63599 9.63589L7.0502 8.22168L11.9999 13.1714Z"/>';
 RI['refresh'] = '<path d="M5.46257 4.43262C7.21556 2.91688 9.5007 2 12 2C17.5228 2 22 6.47715 22 12C22 14.1361 21.3302 16.1158 20.1892 17.7406L17 12H20C20 7.58172 16.4183 4 12 4C9.84982 4 7.89777 4.84827 6.46023 6.22842L5.46257 4.43262ZM18.5374 19.5674C16.7844 21.0831 14.4993 22 12 22C6.47715 22 2 17.5228 2 12C2 9.86386 2.66979 7.88416 3.8108 6.25944L7 12H4C4 16.4183 7.58172 20 12 20C14.1502 20 16.1022 19.1517 17.5398 17.7716L18.5374 19.5674Z"/>';
 
 function riIcon(name) {
@@ -85,8 +86,16 @@ function riIcon(name) {
     var key = mode === "light" || mode === "dark" ? mode : "system";
     if (key === "system") el.removeAttribute("data-theme");
     else el.setAttribute("data-theme", key);
+    if (window.__paintThemeDD) {
+      try {
+        window.__paintThemeDD(key);
+        return;
+      } catch (e) {
+        /* fall through to legacy */
+      }
+    }
     var btn = document.getElementById("theme");
-    if (btn) {
+    if (btn && !btn.classList.contains("dd-trigger")) {
       var m = MODES[key];
       btn.innerHTML = "";
       btn.appendChild(riIcon(m.icon));
@@ -109,11 +118,15 @@ function riIcon(name) {
 
   document.addEventListener("DOMContentLoaded", function () {
     paint(current());
-    var btn = document.getElementById("theme");
-    if (btn && !btn.dataset.wired) {
-      btn.dataset.wired = "1";
-      btn.addEventListener("click", cycle);
-    }
+    /* Legacy cycling fallback: only if the dropdown enhancement (later
+     * listener) did not claim the button. Deferred a tick so enhance wins. */
+    setTimeout(function () {
+      var btn = document.getElementById("theme");
+      if (btn && !btn.dataset.wired && !btn.classList.contains("dd-trigger")) {
+        btn.dataset.wired = "1";
+        btn.addEventListener("click", cycle);
+      }
+    }, 0);
   });
 })();
 
@@ -231,11 +244,18 @@ function riIcon(name) {
       for (var i = 0; i < marks.length; i++) {
         if (marks[i].classList.contains("active")) active = i;
       }
+      var prefix = "";
+      try {
+        var holdEl = document.getElementById("hold");
+        if (holdEl && holdEl.getAttribute("aria-pressed") === "true") prefix = "Pinned · ";
+      } catch (e) {
+        /* ignore */
+      }
       if (count) {
         count.textContent =
           active >= 0
-            ? "Demo " + (active + 1) + " of " + marks.length
-            : marks.length + " demo points";
+            ? prefix + "Demo " + (active + 1) + " of " + marks.length
+            : prefix + marks.length + " demo points";
       }
       if (prev) prev.disabled = active <= 0;
       if (next) next.disabled = active >= marks.length - 1;
@@ -267,15 +287,40 @@ function riIcon(name) {
       }
     };
     updateCues.last = -2;
+    updateCues.shown = -2;
+    window.__updateCues = function () {
+      try {
+        updateCues();
+      } catch (e) {
+        /* ignore */
+      }
+    };
     if (column && (prev || next || count || live) && window.MutationObserver) {
       var queued = false;
       var mo = new MutationObserver(function () {
-        if (queued || document.hidden) return;
+        if (queued) return;
+        if (document.hidden) {
+          var onVis = function () {
+            document.removeEventListener("visibilitychange", onVis);
+            try {
+              updateCues();
+            } catch (e) {
+              /* ignore */
+            }
+          };
+          document.addEventListener("visibilitychange", onVis);
+          return;
+        }
         queued = true;
         setTimeout(function () {
           queued = false;
           try {
             updateCues();
+          } catch (e) {
+            /* ignore */
+          }
+          try {
+            if (window.__repairSections) window.__repairSections();
           } catch (e) {
             /* ignore */
           }
@@ -288,6 +333,71 @@ function riIcon(name) {
         attributeFilter: ["class"],
       });
     }
+
+    /* ---------- section-box repair: the bundle scrolls to a new chapter
+     * without refreshing section options, leaving a stale/blank § box.
+     * window.__NAV (site/nav-data.js) is the fallback source; fresh bundle
+     * data always wins (we only touch verifiably stale boxes). ---------- */
+    var repairSections = function () {
+      var gk = $("chapter"),
+        sk = $("section");
+      if (!gk || !sk || !window.__NAV) return;
+      var m = (window.location.hash || "").match(/^#(\d+)-/);
+      if (!m) return;
+      var n = +m[1];
+      try {
+        if (String(gk.value) !== String(n)) gk.value = String(n);
+      } catch (e) {
+        /* ignore */
+      }
+      var first = sk.options.length ? sk.options[0].value : "";
+      if (first.indexOf(n + "-") === 0 && sk.selectedIndex >= 0) return;
+      var entry = null;
+      for (var i = 0; i < window.__NAV.length; i++) {
+        if (window.__NAV[i][0] === n) {
+          entry = window.__NAV[i];
+          break;
+        }
+      }
+      if (!entry) return;
+      try {
+        sk.replaceChildren();
+        entry[3].forEach(function (sec) {
+          sk.append(new Option(sec[0] + " " + sec[1], sec[0]));
+        });
+        var want = (window.location.hash || "").slice(1);
+        var ok = false;
+        for (var j = 0; j < sk.options.length; j++) {
+          if (sk.options[j].value === want) {
+            sk.selectedIndex = j;
+            ok = true;
+            break;
+          }
+        }
+        if (!ok) sk.selectedIndex = 0;
+      } catch (e) {
+        /* ignore */
+      }
+    };
+    window.addEventListener("hashchange", function () {
+      /* Bundle writes #N-X on arrival; let its Sk() settle first. */
+      setTimeout(function () {
+        try {
+          repairSections();
+        } catch (e) {
+          /* ignore */
+        }
+      }, 400);
+    });
+    /* NOTE: bundle uses history.replaceState (no hashchange event fires),
+     * so the observer below also runs the repair on every settled update. */
+    window.__repairSections = function () {
+      try {
+        repairSections();
+      } catch (e) {
+        /* ignore */
+      }
+    };
 
     /* ---------- controls: expose values, label tables ---------- */
     var controls = $("controls");
@@ -446,6 +556,30 @@ function riIcon(name) {
       } catch (e) {
         /* ignore */
       }
+      /* Honest dead controls: selects need book pages to do anything. */
+      var dead = !!(missing && !missing.hidden);
+      [["chapter", "Chapter"], ["section", "Section"]].forEach(function (pair) {
+        var s = $(pair[0]);
+        if (!s) return;
+        if (s.dataset.mirrorOrig === undefined) {
+          s.dataset.mirrorOrig = "1";
+          s.dataset.origT = s.title || "";
+          s.dataset.origA = s.getAttribute("aria-label") || "";
+        }
+        try {
+          s.disabled = dead;
+        } catch (e) {
+          /* ignore */
+        }
+        if (dead) {
+          s.setAttribute("title", "Needs the book pages — see below");
+          s.setAttribute("aria-label", pair[1] + " (needs book pages)");
+        } else {
+          if (s.dataset.origT) s.setAttribute("title", s.dataset.origT);
+          else s.removeAttribute("title");
+          s.setAttribute("aria-label", s.dataset.origA || pair[1]);
+        }
+      });
     };
     syncOrphan();
     /* The bundle unhides #missing asynchronously after the PDF fetch fails,
@@ -693,19 +827,15 @@ function riIcon(name) {
     quizScrim.id = "quiz-scrim";
     var quizSheet = document.createElement("section");
     quizSheet.id = "quiz-sheet";
+    quizSheet.setAttribute("role", "dialog");
+    quizSheet.setAttribute("aria-modal", "false");
     quizSheet.setAttribute("aria-label", "Make a guess");
     var quizHandle = document.createElement("div");
     quizHandle.className = "sheet-handle";
     quizHandle.setAttribute("aria-hidden", "true");
-    var quizClose = document.createElement("button");
-    quizClose.id = "quiz-close";
-    quizClose.type = "button";
-    quizClose.setAttribute("aria-label", "Skip this question");
-    quizClose.appendChild(riIcon("close"));
     var quizBody = document.createElement("div");
     quizBody.id = "quiz-body";
     quizSheet.appendChild(quizHandle);
-    quizSheet.appendChild(quizClose);
     quizSheet.appendChild(quizBody);
     document.body.appendChild(quizScrim);
     document.body.appendChild(quizSheet);
@@ -741,12 +871,33 @@ function riIcon(name) {
     };
 
     var opened = false;
+    function setBgInert(on) {
+      var split = document.querySelector("main.split");
+      var modes = $("m-modes");
+      [split, modes].forEach(function (el) {
+        if (!el) return;
+        try {
+          if (on) el.setAttribute("inert", "");
+          else el.removeAttribute("inert");
+        } catch (e) {
+          /* ignore */
+        }
+      });
+    }
     function openNav() {
       applyMobile(true);
+      if (window.__closeDD) {
+        try {
+          window.__closeDD();
+        } catch (e) {
+          /* ignore */
+        }
+      }
       opened = true;
       scrim.classList.add("open");
       nav.classList.add("open");
       nav.removeAttribute("inert");
+      setBgInert(true);
       openBtn.setAttribute("aria-expanded", "true");
       close.focus();
     }
@@ -755,12 +906,32 @@ function riIcon(name) {
       scrim.classList.remove("open");
       nav.classList.remove("open");
       nav.setAttribute("inert", "");
+      setBgInert(false);
       openBtn.setAttribute("aria-expanded", "false");
       if (focusBack !== false) openBtn.focus();
     }
     openBtn.addEventListener("click", openNav);
     close.addEventListener("click", function () {
       closeNav(true);
+    });
+    nav.addEventListener("keydown", function (e) {
+      if (e.key !== "Tab" || !opened) return;
+      var f = nav.querySelectorAll(
+        "button,select,[href],input,[tabindex]:not([tabindex='-1'])"
+      );
+      f = Array.prototype.filter.call(f, function (el) {
+        return !el.disabled && el.offsetParent !== null;
+      });
+      if (!f.length) return;
+      var first = f[0],
+        last = f[f.length - 1];
+      if (e.shiftKey && document.activeElement === first) {
+        last.focus();
+        e.preventDefault();
+      } else if (!e.shiftKey && document.activeElement === last) {
+        first.focus();
+        e.preventDefault();
+      }
     });
     scrim.addEventListener("click", function () {
       closeNav(true);
@@ -793,8 +964,57 @@ function riIcon(name) {
         b.setAttribute("title", opts[v]);
         b.setAttribute("aria-label", "Go to chapter " + opts[v]);
         b.addEventListener("click", function () {
-          chapterSel.value = v;
-          chapterSel.dispatchEvent(new Event("change", { bubbles: true }));
+          try {
+            if (!chapterSel.querySelector('option[value="' + v + '"]')) return;
+            chapterSel.value = v;
+            var jumped = false;
+            try {
+              if (window.__NAV && window.__goPage) {
+                for (var qi = 0; qi < window.__NAV.length; qi++) {
+                  if (window.__NAV[qi][0] === +v) {
+                    jumped = window.__goPage(window.__NAV[qi][2], 0.02);
+                    break;
+                  }
+                }
+              }
+            } catch (e) {
+              /* ignore */
+            }
+            try {
+              closeNav(false);
+            } catch (e) {
+              /* ignore */
+            }
+            try {
+              if (jumped && window.__watchNav) {
+                window.__watchNav(
+                  function () {
+                    var h = window.location.hash || "";
+                    if (h.indexOf("#" + v + "-") === 0) return { done: true };
+                    return { done: false, key: h };
+                  },
+                  function () {
+                    try {
+                      if (window.__goPage) {
+                        for (var qj = 0; qj < window.__NAV.length; qj++) {
+                          if (window.__NAV[qj][0] === +v) {
+                            window.__goPage(window.__NAV[qj][2], 0.02);
+                            break;
+                          }
+                        }
+                      }
+                    } catch (e) {
+                      /* ignore */
+                    }
+                  }
+                );
+              }
+            } catch (e) {
+              /* ignore */
+            }
+          } catch (e) {
+            /* ignore */
+          }
         });
         recentWrap.appendChild(b);
       });
@@ -825,32 +1045,126 @@ function riIcon(name) {
       /* ignore */
     }
 
-    /* Choosing a chapter/section is terminal: record, close behind it,
-     * and bring the demo back into view on phones. */
+    /* Choosing a chapter/section is terminal: record, close behind it.
+     * On phones, bring the scroller that owns the new content into view:
+     * lab scrolls its own stage, book is already scrolled by the bundle. */
     [chapterSel, sectionSel].forEach(function (sel) {
       if (sel)
         sel.addEventListener("change", function () {
           recordRecent();
-          if (opened) closeNav(false);
-          openBtn.focus();
+          /* Instant jump overriding the bundle's stall-prone smooth flight
+           * (it runs first in the same task). Targets from __NAV. */
           try {
-            if (
+            if (window.__NAV && window.__goPage) {
+              if (sel.id === "chapter") {
+                var NN = +sel.value;
+                for (var qi = 0; qi < window.__NAV.length; qi++) {
+                  if (window.__NAV[qi][0] === NN) {
+                    window.__goPage(window.__NAV[qi][2], 0.02);
+                    break;
+                  }
+                }
+              } else {
+                var want = sel.value;
+                outer: for (var qj = 0; qj < window.__NAV.length; qj++) {
+                  var secs = window.__NAV[qj][3] || [];
+                  for (var qk = 0; qk < secs.length; qk++) {
+                    if (secs[qk][0] === want) {
+                      window.__goPage(secs[qk][2], secs[qk][3] || 0);
+                      break outer;
+                    }
+                  }
+                }
+              }
+            }
+          } catch (e) {
+            /* ignore */
+          }
+          if (opened) closeNav(false);
+          try {
+            if (getComputedStyle(openBtn).display === "none") return;
+          } catch (e) {
+            /* ignore */
+          }
+          try {
+            openBtn.focus({ preventScroll: true });
+          } catch (err) {
+            openBtn.focus();
+          }
+          try {
+            var labOnly =
               window.matchMedia &&
-              window.matchMedia("(max-width: 800px)").matches
-            ) {
-              var split = document.querySelector("main.split");
+              window.matchMedia("(max-width: 800px)").matches &&
+              (document.body.dataset.mview || "split") !== "book";
+            if (labOnly) {
               var stage = document.querySelector("main.split section#stage");
               var reduce =
                 window.matchMedia &&
                 window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-              if (split && stage) {
-                split.scrollTo({
-                  top: stage.offsetTop,
+              if (stage) {
+                stage.scrollTo({
+                  top: 0,
                   behavior: reduce ? "auto" : "smooth",
                 });
               }
             }
-          } catch (e) {
+          } catch (err) {
+            /* ignore */
+          }
+          /* Stall watchdog: far chapter/section flights can park mid-way
+           * (render yanks cancel the smooth scroll). Re-issue the same
+           * change only while the hash shows no progress. Skipped without
+           * a loaded book (nothing can arrive). */
+          try {
+            var col = document.querySelector("#column");
+            var hasMarks =
+              !!col && col.querySelectorAll(".cue-mark").length > 0;
+            if (hasMarks && window.__watchNav) {
+              var isChap = sel.id === "chapter";
+              var chapN = isChap ? +sel.value : 0;
+              var secId = isChap ? null : sel.value;
+              window.__watchNav(
+                function () {
+                  var h = window.location.hash || "";
+                  if (isChap) {
+                    if (chapN && h.indexOf("#" + chapN + "-") === 0)
+                      return { done: true };
+                  } else if (h === "#" + secId) return { done: true };
+                  return { done: false, key: h };
+                },
+                function () {
+                  try {
+                    var done = false;
+                    if (window.__NAV && window.__goPage) {
+                      if (isChap) {
+                        for (var ri = 0; ri < window.__NAV.length; ri++) {
+                          if (window.__NAV[ri][0] === chapN) {
+                            done = window.__goPage(window.__NAV[ri][2], 0.02);
+                            break;
+                          }
+                        }
+                      } else {
+                        outer2: for (var rj = 0; rj < window.__NAV.length; rj++) {
+                          var rs = window.__NAV[rj][3] || [];
+                          for (var rk = 0; rk < rs.length; rk++) {
+                            if (rs[rk][0] === secId) {
+                              done = window.__goPage(rs[rk][2], rs[rk][3] || 0);
+                              break outer2;
+                            }
+                          }
+                        }
+                      }
+                    }
+                    if (!done) {
+                      sel.dispatchEvent(new Event("change", { bubbles: true }));
+                    }
+                  } catch (e) {
+                    /* ignore */
+                  }
+                }
+              );
+            }
+          } catch (err) {
             /* ignore */
           }
         });
@@ -872,9 +1186,57 @@ function riIcon(name) {
             b.type = "button";
             b.setAttribute("role", "listitem");
             b.addEventListener("click", function () {
-              var m = marks[idx];
-              if (m) m.click();
+              try {
+                armFlight(idx + 1);
+              } catch (e) {
+                /* ignore */
+              }
+              try {
+                if (window.__goCue) window.__goCue(idx + 1);
+              } catch (e) {
+                /* ignore */
+              }
+              try {
+                if (window.__watchNav) {
+                  window.__watchNav(
+                    function () {
+                      var ms = columnQ
+                        ? columnQ.querySelectorAll(".cue-mark")
+                        : [];
+                      var cur = -1;
+                      for (var i = 0; i < ms.length; i++) {
+                        if (ms[i].classList.contains("active")) {
+                          cur = i + 1;
+                          break;
+                        }
+                      }
+                      if (cur === idx + 1) return { done: true };
+                      return { done: false, key: "a" + cur };
+                    },
+                    function () {
+                      try {
+                        if (window.__goCue) window.__goCue(idx + 1);
+                      } catch (e) {
+                        /* ignore */
+                      }
+                    }
+                  );
+                }
+              } catch (e) {
+                /* ignore */
+              }
               closeNav(false);
+              try {
+                var nx = $("next-cue");
+                if (nx) nx.focus({ preventScroll: true });
+              } catch (e) {
+                try {
+                  var nx2 = $("next-cue");
+                  if (nx2) nx2.focus();
+                } catch (err) {
+                  /* ignore */
+                }
+              }
             });
             cueList.appendChild(b);
           })(i);
@@ -900,6 +1262,13 @@ function riIcon(name) {
     var quizOpen = false;
     function quizShow(show) {
       if (show === quizOpen) return;
+      if (show && window.__closeDD) {
+        try {
+          window.__closeDD();
+        } catch (e) {
+          /* ignore */
+        }
+      }
       quizOpen = show;
       quizScrim.classList.toggle("open", show);
       quizSheet.classList.toggle("open", show);
@@ -922,7 +1291,6 @@ function riIcon(name) {
         quizHome.parent.insertBefore(predict, quizHome.next);
       }
     }
-    quizClose.addEventListener("click", quizSkip);
     quizScrim.addEventListener("click", quizSkip);
     document.addEventListener("keydown", function (e) {
       if (
@@ -945,7 +1313,19 @@ function riIcon(name) {
         if (!predict.hidden && predict.parentNode !== quizBody) {
           quizBody.appendChild(predict);
         }
+        var wasOpen = quizOpen;
         quizShow(!predict.hidden);
+        if (!predict.hidden && !wasOpen) {
+          try {
+            var ae = document.activeElement;
+            if (ae && ae !== document.body) {
+              var sk = predict.querySelector(".predict-skip");
+              if (sk) sk.focus({ preventScroll: true });
+            }
+          } catch (e) {
+            /* ignore */
+          }
+        }
       };
       new MutationObserver(quizSync).observe(predict, {
         attributes: true,
@@ -998,13 +1378,270 @@ function riIcon(name) {
       );
     })();
 
-    /* Missing-card browse button opens the sheet via #mnav-open
-     * (wired in the interaction layer above). */
+    /* ---------- jump feedback: optimistic counter + resize re-issue ----
+     * Far jumps ride a seconds-long smooth scroll; without feedback the
+     * counter looks dead. We paint intent immediately, confirm on arrival
+     * (observer overwrites), and re-issue once if a resize parks mid-flight. */
+    var flight = null;
+    var columnQ = $("column");
+    var countQ = $("cue-count");
+    var cueTotalQ = function () {
+      return columnQ ? columnQ.querySelectorAll(".cue-mark").length : 0;
+    };
+    var activeIdxQ = function () {
+      if (!columnQ) return -1;
+      var ms = columnQ.querySelectorAll(".cue-mark");
+      for (var i = 0; i < ms.length; i++) {
+        if (ms[i].classList.contains("active")) return i;
+      }
+      return -1;
+    };
+    var armFlight = function (target1) {
+      var n = cueTotalQ();
+      if (!n || target1 < 1 || target1 > n) return;
+      flight = { target: target1, t0: Date.now(), retried: false };
+      try {
+        if (countQ) countQ.textContent = "Demo \u2192 " + target1 + " of " + n;
+      } catch (e) {
+        /* ignore */
+      }
+      setTimeout(function () {
+        if (flight && flight.target === target1) {
+          flight = null;
+          try {
+            if (window.__updateCues) window.__updateCues();
+          } catch (e) {
+            /* ignore */
+          }
+        }
+      }, 8000);
+    };
+    ["prev-cue", "next-cue"].forEach(function (id) {
+      var b = $(id);
+      if (b)
+        b.addEventListener("click", function () {
+          var a = activeIdxQ(),
+            n = cueTotalQ();
+          if (a < 0 || !n) return;
+          var want = id === "next-cue" ? a + 2 : a;
+          if (want < 1 || want > n) return;
+          armFlight(want);
+          try {
+            if (window.__goCue) window.__goCue(want);
+          } catch (e) {
+            /* ignore */
+          }
+          try {
+            if (window.__watchNav) {
+              window.__watchNav(
+                function () {
+                  var ms = columnQ
+                    ? columnQ.querySelectorAll(".cue-mark")
+                    : [];
+                  var cur = -1;
+                  for (var i = 0; i < ms.length; i++) {
+                    if (ms[i].classList.contains("active")) {
+                      cur = i + 1;
+                      break;
+                    }
+                  }
+                  if (cur === want) return { done: true };
+                  return { done: false, key: "a" + cur };
+                },
+                function () {
+                  try {
+                    if (window.__goCue) window.__goCue(want);
+                  } catch (e) {
+                    /* ignore */
+                  }
+                }
+              );
+            }
+          } catch (e) {
+            /* ignore */
+          }
+        });
+    });
+    var resizeT = null;
+    /* Arrival watchdog: far smooth flights stall (render yanks, competing
+     * scrolls). Re-issue ONLY when stalled (no hash/counter progress across
+     * polls); a progressing flight is never touched. */
+    var navWatch = null;
+    var watchNav = function (expectFn, retryFn, maxStalls) {
+      if (navWatch) {
+        try {
+          clearInterval(navWatch.id);
+        } catch (e) {
+          /* ignore */
+        }
+        navWatch = null;
+      }
+      if (maxStalls === undefined) maxStalls = 3;
+      var last = null,
+        stills = 0,
+        stalls = 0,
+        id = setInterval(function () {
+          var state = null;
+          try {
+            state = expectFn();
+          } catch (e) {
+            state = { done: true, key: "err" };
+          }
+          if (!state || state.done) {
+            clearInterval(id);
+            if (navWatch && navWatch.id === id) navWatch = null;
+            return;
+          }
+          if (state.key === last) stills++;
+          else {
+            stills = 0;
+            last = state.key;
+          }
+          if (stills >= 2) {
+            stills = 0;
+            stalls++;
+            if (stalls > maxStalls) {
+              clearInterval(id);
+              if (navWatch && navWatch.id === id) navWatch = null;
+              return;
+            }
+            try {
+              retryFn();
+            } catch (e) {
+              /* ignore */
+            }
+          }
+        }, 1000);
+      navWatch = { id: id };
+      setTimeout(function () {
+        clearInterval(id);
+        if (navWatch && navWatch.id === id) navWatch = null;
+      }, 25000);
+    };
+    window.__watchNav = watchNav;
+    window.addEventListener("resize", function () {
+      if (!flight) return;
+      if (resizeT) clearTimeout(resizeT);
+      resizeT = setTimeout(function () {
+        if (!flight || flight.retried) {
+          flight = null;
+          return;
+        }
+        if (Date.now() - flight.t0 > 15000) {
+          flight = null;
+          return;
+        }
+        var a = activeIdxQ();
+        if (a + 1 === flight.target) {
+          flight = null;
+          return;
+        }
+        var ms = columnQ ? columnQ.querySelectorAll(".cue-mark") : [];
+        var m = ms[flight.target - 1];
+        if (m) {
+          try {
+            m.click();
+          } catch (e) {
+            /* ignore */
+          }
+        }
+        flight.retried = true;
+      }, 350);
+    });
+
+    /* ---------- direct jumps: instant reader scrolls (bundle smooth
+     * flights stall when renders yank them). Bundle ticks settle all
+     * state (demo, selects, hash, counter) from the scroll itself. ----- */
+    var readerTopOf = function (el) {
+      var reader = document.querySelector("#reader");
+      if (!el || !reader) return null;
+      var top = 0,
+        n = el;
+      while (n && n !== reader) {
+        top += n.offsetTop || 0;
+        n = n.offsetParent;
+      }
+      if (n !== reader) {
+        try {
+          var r = el.getBoundingClientRect(),
+            rr = reader.getBoundingClientRect();
+          top = r.top - rr.top + reader.scrollTop;
+        } catch (e) {
+          return null;
+        }
+      }
+      return top;
+    };
+    var readerJump = function (top) {
+      try {
+        var reader = document.querySelector("#reader");
+        if (!reader || top === null || top === undefined) return false;
+        var dest = Math.max(0, top - reader.clientHeight * 0.32);
+        reader.scrollTo({ top: dest, behavior: "auto" });
+        return true;
+      } catch (e) {
+        return false;
+      }
+    };
+    window.__goCue = function (idx1) {
+      try {
+        var col = document.querySelector("#column");
+        if (!col) return false;
+        var ms = col.querySelectorAll(".cue-mark");
+        var m = ms[idx1 - 1];
+        if (!m) return false;
+        var top = readerTopOf(m);
+        if (top === null) {
+          m.click();
+          return true;
+        }
+        readerJump(top);
+        return true;
+      } catch (e) {
+        return false;
+      }
+    };
+    window.__goPage = function (pageIdx, yFrac) {
+      try {
+        var col = document.querySelector("#column");
+        if (!col) return false;
+        var list = [];
+        var kids = col.children;
+        for (var i = 0; i < kids.length; i++) {
+          if (kids[i].classList && kids[i].classList.contains("page"))
+            list.push(kids[i]);
+        }
+        var el = list[pageIdx];
+        if (!el) return false;
+        var top = readerTopOf(el);
+        if (top === null) return false;
+        var reader = document.querySelector("#reader");
+        var dest = Math.max(
+          0,
+          top + (yFrac || 0) * el.offsetHeight - reader.clientHeight * 0.32
+        );
+        reader.scrollTo({ top: dest, behavior: "auto" });
+        return true;
+      } catch (e) {
+        return false;
+      }
+    };
+    var navEntry = function (pageIdx, yFrac) {
+      if (!window.__goPage(pageIdx, yFrac === undefined ? 0.02 : yFrac))
+        return false;
+      return true;
+    };
 
     var mq = window.matchMedia
       ? window.matchMedia("(max-width: 800px)")
       : { matches: false, addEventListener: function () {} };
     function applyMobile(mobile) {
+      var ae = null;
+      try {
+        ae = document.activeElement;
+      } catch (e) {
+        /* ignore */
+      }
       if (mobile) {
         Object.keys(groups).forEach(function (k) {
           var row = nav.querySelector('[data-slot="' + k + '"]');
@@ -1027,6 +1664,7 @@ function riIcon(name) {
           nav.setAttribute("inert", "");
           openBtn.setAttribute("aria-expanded", "false");
         }
+        setBgInert(false);
         quizShow(false);
         movePredictHome();
         home.forEach(function (n) {
@@ -1036,6 +1674,14 @@ function riIcon(name) {
         thome.forEach(function (n) {
           transport.appendChild(n);
         });
+        try {
+          if (ae && nav.contains(ae)) {
+            var cs = $("chapter");
+            if (cs) cs.focus({ preventScroll: true });
+          }
+        } catch (e) {
+          /* ignore */
+        }
       }
       document.documentElement.classList.toggle("mnav", mobile);
     }
@@ -1088,6 +1734,14 @@ function riIcon(name) {
   }
 
   function paintModes() {
+    if (window.__paintViewDD) {
+      try {
+        window.__paintViewDD();
+        return;
+      } catch (e) {
+        /* fall through to legacy */
+      }
+    }
     var cur = document.body.dataset.mview || "split";
     var bar = $("m-modes");
     if (!bar) return;
@@ -1134,15 +1788,12 @@ function riIcon(name) {
         window.matchMedia("(prefers-reduced-motion: reduce)").matches;
       var mobile =
         window.matchMedia && window.matchMedia("(max-width: 800px)").matches;
-      if (mobile) {
-        var split = document.querySelector("main.split");
-        var target =
-          v === "book" ? $("reader") : v === "lab" ? $("stage") : null;
-        if (split) {
-          split.scrollTo({
-            top: target ? target.offsetTop : 0,
-            behavior: reduce ? "auto" : "smooth",
-          });
+      /* Lab's stage is its own scroller on phones; in Book mode the bundle
+       * already smooth-scrolls #reader, so there is nothing to add. */
+      if (mobile && v === "lab") {
+        var stage = document.querySelector("main.split section#stage");
+        if (stage) {
+          stage.scrollTo({ top: 0, behavior: reduce ? "auto" : "smooth" });
         }
       }
     } catch (e) {
@@ -1153,29 +1804,69 @@ function riIcon(name) {
   window.__setView = setView;
 
   onReady(function () {
+    /* A manual play toggle inside Book mode means the user took over:
+     * never auto-resume on the way out. */
+    document.addEventListener("click", function (e) {
+      try {
+        var t =
+          e.target && e.target.closest ? e.target.closest("#play") : null;
+        if (t && (document.body.dataset.mview || "split") === "book") {
+          window.__pausedForBook = false;
+        }
+      } catch (err) {
+        /* ignore */
+      }
+    });
+  });
+
+  onReady(function () {
     var split = document.querySelector("main.split");
     if (!split) return;
     var bar = document.createElement("div");
     bar.id = "m-modes";
     bar.setAttribute("role", "group");
     bar.setAttribute("aria-label", "View mode");
-    VIEWS.forEach(function (v) {
-      var b = document.createElement("button");
-      b.type = "button";
-      b.dataset.view = v;
-      b.appendChild(riIcon(META[v].icon));
-      var s = document.createElement("span");
-      s.className = "btn-label";
-      s.textContent = META[v].word;
-      b.appendChild(s);
-      b.setAttribute("aria-label", META[v].label);
-      b.setAttribute("title", META[v].label);
-      b.addEventListener("click", function () {
-        setView(v);
-      });
-      bar.appendChild(b);
-    });
     split.appendChild(bar);
+    try {
+      var viewOpts = VIEWS.map(function (v) {
+        return { v: v, icon: META[v].icon, word: META[v].word };
+      });
+      window.__viewDD = window.__makeDropdown({
+        wrapId: "m-modes",
+        useWrap: bar,
+        trigId: "m-modes-trigger",
+        listId: "m-modes-list",
+        kicker: "View",
+        label: "View mode",
+        opts: viewOpts,
+        get: function () {
+          return document.body.dataset.mview || "split";
+        },
+        commit: function (v) {
+          setView(v);
+        },
+        announce: function (c, meta) {
+          return "View: " + meta.word + ". Activate to change.";
+        },
+      });
+    } catch (e) {
+      VIEWS.forEach(function (v) {
+        var b = document.createElement("button");
+        b.type = "button";
+        b.dataset.view = v;
+        b.appendChild(riIcon(META[v].icon));
+        var s = document.createElement("span");
+        s.className = "btn-label";
+        s.textContent = META[v].word;
+        b.appendChild(s);
+        b.setAttribute("aria-label", META[v].label);
+        b.setAttribute("title", META[v].label);
+        b.addEventListener("click", function () {
+          setView(v);
+        });
+        bar.appendChild(b);
+      });
+    }
     setView(stored(), true);
     /* Desktop: the switch lives in the header (never covering content);
      * mobile keeps the bottom bar. Moves the same node both ways. */
@@ -1292,4 +1983,398 @@ function riIcon(name) {
       hide();
     }
   }, 120);
+})();
+
+/* Dropdown factory + view/theme dropdowns. One shared builder for both
+ * switches: button[aria-haspopup=listbox] + [role=listbox] + options.
+ * Replaces the segmented #m-modes buttons and the cycling #theme button;
+ * storage keys, setView/cycle APIs and the placeModes mover are untouched. */
+(function () {
+  "use strict";
+
+  function $(id) {
+    return document.getElementById(id);
+  }
+
+  function onReady(fn) {
+    if (document.readyState === "loading") {
+      document.addEventListener("DOMContentLoaded", fn, { once: true });
+    } else {
+      fn();
+    }
+  }
+
+  var DD = { all: [] };
+
+  function live() {
+    var n = $("dd-live");
+    if (n) return n;
+    n = document.createElement("div");
+    n.id = "dd-live";
+    n.className = "sr-only";
+    n.setAttribute("role", "status");
+    document.body.appendChild(n);
+    return n;
+  }
+
+  function announce(msg) {
+    try {
+      var n = live();
+      n.textContent = "";
+      var raf = window.requestAnimationFrame || function (f) { return setTimeout(f, 30); };
+      raf(function () {
+        n.textContent = msg;
+      });
+    } catch (e) {
+      /* ignore */
+    }
+  }
+
+  function closeAll(except) {
+    DD.all.forEach(function (dd) {
+      if (dd !== except) dd.close(true);
+    });
+  }
+  window.__closeDD = closeAll;
+  window.__makeDropdown = makeDropdown;
+
+  function makeDropdown(cfg) {
+    var wrap = cfg.useWrap || document.createElement("div");
+    wrap.className = "dd";
+    wrap.id = cfg.wrapId;
+    if (cfg.wrapAttrs) {
+      Object.keys(cfg.wrapAttrs).forEach(function (k) {
+        wrap.setAttribute(k, cfg.wrapAttrs[k]);
+      });
+    }
+    var trig = cfg.useTrigger || document.createElement("button");
+    if (!cfg.useTrigger) {
+      trig.type = "button";
+      trig.className = "dd-trigger";
+      trig.id = cfg.trigId;
+    } else {
+      trig.classList.add("dd-trigger");
+    }
+    trig.setAttribute("aria-haspopup", "listbox");
+    trig.setAttribute("aria-expanded", "false");
+    trig.setAttribute("aria-controls", cfg.listId);
+    var list = document.createElement("div");
+    list.className = "dd-list";
+    list.id = cfg.listId;
+    list.setAttribute("role", "listbox");
+    list.setAttribute("aria-label", cfg.label);
+    list.hidden = true;
+    var kick = document.createElement("div");
+    kick.className = "dd-kicker";
+    kick.setAttribute("aria-hidden", "true");
+    kick.textContent = cfg.kicker;
+    list.appendChild(kick);
+    var opts = cfg.opts.map(function (o) {
+      var d = document.createElement("div");
+      d.className = "dd-opt";
+      d.setAttribute("role", "option");
+      d.setAttribute("id", cfg.listId + "-" + o.v);
+      d.setAttribute("data-val", o.v);
+      d.setAttribute("tabindex", "-1");
+      d.setAttribute("aria-selected", "false");
+      d.appendChild(riIcon(o.icon));
+      var w = document.createElement("span");
+      w.textContent = o.word;
+      d.appendChild(w);
+      list.appendChild(d);
+      return { v: o.v, el: d };
+    });
+    if (!cfg.useTrigger) wrap.appendChild(trig);
+    wrap.appendChild(list);
+
+    var api = { wrap: wrap, trig: trig, list: list, open: false };
+    var typeBuf = "";
+    var typeT = null;
+
+    function paintTrigger(cur) {
+      var meta = null;
+      cfg.opts.forEach(function (o) {
+        if (o.v === cur) meta = o;
+      });
+      if (!meta) meta = cfg.opts[0];
+      trig.innerHTML = "";
+      trig.appendChild(riIcon(meta.icon));
+      var s = document.createElement("span");
+      s.className = "btn-label";
+      s.textContent = meta.word;
+      trig.appendChild(s);
+      var caret = riIcon("chevron-down");
+      caret.classList.add("dd-caret");
+      trig.appendChild(caret);
+      trig.setAttribute("aria-label", cfg.announce(cur, meta));
+    }
+
+    function paintOpts(cur) {
+      opts.forEach(function (o) {
+        var sel = o.v === cur;
+        o.el.setAttribute("aria-selected", sel ? "true" : "false");
+        o.el.setAttribute("tabindex", sel ? "0" : "-1");
+      });
+    }
+
+    api.paint = function (cur) {
+      paintTrigger(cur);
+      paintOpts(cur);
+    };
+
+    api.close = function (silent) {
+      if (!api.open) return;
+      api.open = false;
+      trig.setAttribute("aria-expanded", "false");
+      list.hidden = true;
+      if (!silent) {
+        try {
+          trig.focus({ preventScroll: true });
+        } catch (e) {
+          try {
+            trig.focus();
+          } catch (err) {
+            /* ignore */
+          }
+        }
+      }
+    };
+
+    function focusOpt(v) {
+      for (var i = 0; i < opts.length; i++) {
+        if (opts[i].v === v) {
+          opts[i].el.focus();
+          return;
+        }
+      }
+    }
+
+    function commit(v) {
+      try {
+        cfg.commit(v);
+      } catch (e) {
+        /* ignore */
+      }
+      api.paint(cfg.get());
+      api.close(false);
+    }
+
+    trig.addEventListener("click", function () {
+      if (api.open) {
+        api.close(false);
+        return;
+      }
+      closeAll(api);
+      api.open = true;
+      trig.setAttribute("aria-expanded", "true");
+      list.hidden = false;
+      api.paint(cfg.get());
+      focusOpt(cfg.get());
+    });
+
+    list.addEventListener("click", function (e) {
+      var t =
+        e.target && e.target.closest
+          ? e.target.closest(".dd-opt")
+          : null;
+      if (t) commit(t.getAttribute("data-val"));
+    });
+
+    list.addEventListener("keydown", function (e) {
+      var cur = document.activeElement;
+      var idx = -1;
+      for (var i = 0; i < opts.length; i++) {
+        if (opts[i].el === cur) {
+          idx = i;
+          break;
+        }
+      }
+      var move = function (j) {
+        j = (j + opts.length) % opts.length;
+        opts[j].el.focus();
+      };
+      if (e.key === "Escape") {
+        api.close(false);
+        e.preventDefault();
+      } else if (e.key === "ArrowDown" || e.key === "ArrowRight") {
+        move(idx + 1);
+        e.preventDefault();
+      } else if (e.key === "ArrowUp" || e.key === "ArrowLeft") {
+        move(idx - 1);
+        e.preventDefault();
+      } else if (e.key === "Home") {
+        move(0);
+        e.preventDefault();
+      } else if (e.key === "End") {
+        move(opts.length - 1);
+        e.preventDefault();
+      } else if (e.key === "Enter" || e.key === " ") {
+        if (idx >= 0) commit(opts[idx].v);
+        e.preventDefault();
+      } else if (e.key === "Tab") {
+        api.close(true);
+      } else if (e.key && e.key.length === 1) {
+        typeBuf += e.key.toLowerCase();
+        if (typeT) clearTimeout(typeT);
+        typeT = setTimeout(function () {
+          typeBuf = "";
+        }, 500);
+        for (var k = 0; k < opts.length; k++) {
+          var j = (idx + 1 + k) % opts.length;
+          if (opts[j].v.charAt(0).toLowerCase() === typeBuf.charAt(0)) {
+            opts[j].el.focus();
+            break;
+          }
+        }
+      }
+    });
+
+    document.addEventListener("pointerdown", function (e) {
+      if (api.open && !wrap.contains(e.target)) api.close(true);
+    });
+    wrap.addEventListener("focusout", function (e) {
+      if (api.open && e.relatedTarget && !wrap.contains(e.relatedTarget)) {
+        api.close(true);
+      }
+    });
+
+    DD.all.push(api);
+    return api;
+  }
+
+  /* ---------- theme dropdown (enhances #theme in place) ---------- */
+  var THEME_OPTS = [
+    { v: "system", icon: "contrast-2", word: "System" },
+    { v: "light", icon: "sun", word: "Light" },
+    { v: "dark", icon: "moon", word: "Dark" },
+  ];
+  var themeDD = null;
+
+  window.__paintThemeDD = function (key) {
+    if (!themeDD) return;
+    var m = null;
+    ["system", "light", "dark"].forEach(function (k) {
+      if (k === key) m = k;
+    });
+    if (!m) m = "system";
+    themeDD.paint(m);
+  };
+
+  window.__setTheme = function (mode) {
+    var key = mode === "light" || mode === "dark" ? mode : "system";
+    try {
+      if (key === "system") window.localStorage.removeItem("feynman-theme");
+      else window.localStorage.setItem("feynman-theme", key);
+    } catch (e) {
+      /* ignore */
+    }
+    try {
+      if (window.__paintThemeDD) window.__paintThemeDD(key);
+    } catch (e) {
+      /* ignore */
+    }
+    var el = document.documentElement;
+    if (key === "system") el.removeAttribute("data-theme");
+    else el.setAttribute("data-theme", key);
+    announce(
+      key === "system"
+        ? "Theme changed to System"
+        : "Theme changed to " + key.charAt(0).toUpperCase() + key.slice(1)
+    );
+  };
+
+  /* ---------- view dropdown (replaces the segmented buttons) ---------- */
+  var VIEW_OPTS = [
+    { v: "split", icon: "layout-column", word: "Split" },
+    { v: "book", icon: "book-open", word: "Book" },
+    { v: "lab", icon: "flask", word: "Playground" },
+  ];
+  var viewDD = null;
+
+  window.__paintViewDD = function () {
+    var api = window.__viewDD || viewDD;
+    if (!api) return;
+    var cur = document.body.dataset.mview || "split";
+    api.paint(cur);
+  };
+
+  onReady(function () {
+    /* Enhance the patched #theme button into the dropdown trigger. */
+    var tbtn = document.getElementById("theme");
+    if (tbtn && !tbtn.classList.contains("dd-trigger")) {
+      var cur = document.documentElement.getAttribute("data-theme") || "system";
+      themeDD = makeDropdown({
+        wrapId: "theme-dd",
+        useTrigger: tbtn,
+        listId: "theme-list",
+        kicker: "Theme",
+        label: "Colour theme",
+        opts: THEME_OPTS,
+        get: function () {
+          return document.documentElement.getAttribute("data-theme") || "system";
+        },
+        commit: function (v) {
+          window.__setTheme(v);
+        },
+        announce: function (c, meta) {
+          return "Colour theme: " + meta.word + ". Activate to change.";
+        },
+      });
+      var twrap = themeDD.wrap;
+      tbtn.parentNode.insertBefore(twrap, tbtn);
+      twrap.appendChild(tbtn);
+      twrap.appendChild(themeDD.list);
+      if (window.__paintThemeDD) window.__paintThemeDD(cur);
+      var helpBtn = document.getElementById("help-btn");
+      if (helpBtn) {
+        helpBtn.addEventListener("click", function () {
+          closeAll();
+        });
+      }
+    }
+
+    /* Build the view dropdown inside #m-modes (id kept for movers/CSS). */
+    var mbar = document.getElementById("m-modes");
+    if (mbar && !mbar.classList.contains("dd")) {
+      viewDD = makeDropdown({
+        wrapId: "m-modes-x",
+        trigId: "m-modes-trigger",
+        listId: "m-modes-list",
+        kicker: "View",
+        label: "View mode",
+        opts: VIEW_OPTS,
+        get: function () {
+          return document.body.dataset.mview || "split";
+        },
+        commit: function (v) {
+          if (window.__setView) window.__setView(v);
+        },
+        announce: function (c, meta) {
+          return "View: " + meta.word + ". Activate to change.";
+        },
+      });
+      /* Adopt the factory nodes under the stable #m-modes id. */
+      var inner = viewDD.wrap;
+      mbar.className = "dd";
+      mbar.setAttribute("data-dd", "view");
+      while (inner.firstChild) mbar.appendChild(inner.firstChild);
+      viewDD.wrap = mbar;
+      viewDD.trig = mbar.querySelector(".dd-trigger");
+      viewDD.list = mbar.querySelector(".dd-list");
+      if (window.__paintViewDD) window.__paintViewDD();
+    }
+
+    /* Breakpoint flips and sheet/quiz/dialog layers close any open list. */
+    if (window.matchMedia) {
+      try {
+        var bmq = window.matchMedia("(max-width: 800px)");
+        var bmh = function () {
+          closeAll();
+        };
+        if (bmq.addEventListener) bmq.addEventListener("change", bmh);
+      } catch (e) {
+        /* ignore */
+      }
+    }
+  });
 })();

@@ -82,11 +82,21 @@ placeholder instead of white flash, a 0.25 s content fade on cue changes,
 and chapter changes scroll back to the stage on phones.
 
 **View modes** — Split / Book / Playground (`body[data-mview]`, persisted):
-segmented group in the desktop header, sticky bar on phones. Book hides
-the stage (pausing a playing demo, resumed on return); Playground keeps the
-reader laid out but invisible, because the bundle navigates ONLY by
-scrolling `#reader` — `display:none` would silently break every cue jump.
-Default Split on desktop, Playground on phones.
+listbox dropdowns in the desktop header, sticky bottom dropdown on phones;
+theme is a matching System/Light/Dark dropdown in the header on all
+screens. Book hides the stage (pausing a playing demo, resumed on return);
+Playground keeps the reader laid out but invisible, because the bundle
+navigates ONLY by scrolling `#reader` — `display:none` would silently break
+every cue jump. Default Split on desktop, Playground on phones.
+
+**Navigation hardening** — far smooth-scroll flights stall when renders
+yank them, so jumps carry an arrival watchdog (progress-checked retries,
+bounded): chapter/section changes, cue taps, swipe. The bundle leaves the §
+box stale after chapter-dropdown jumps, so a mirror repair rebuilds it from
+a scraped section table (`site/nav-data.js`, fallback only) on hash
+arrival. Optimistic `Demo → N` counter while flying; sheet trap + inert
+background; focus returns on jump/close/resize; manual play toggles in Book
+mode cancel auto-resume; stored Split survives phone visits.
 
 **Mobile (≤800 px): sheet + cue bar, not columns.** The 48 vh stacked stage
 is replaced by a natural-height stage (4:3 canvas capped at 60svh), a sticky

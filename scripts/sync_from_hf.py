@@ -5,7 +5,12 @@ current upstream snapshot (full file contents, no git-lfs/xet needed) and
 overlays it onto this repo, preserving mirror-specific files:
 
   kept as-is: .git/, .github/, netlify.toml, scripts/, MIRROR.md,
-              .gitignore, .gitattributes (mirror stores wasm/fonts without LFS)
+              .gitignore, .gitattributes (mirror stores wasm/fonts without LFS),
+              site/spectral.css, site/fonts/ (mirror theming)
+
+  After overlaying, the Spectral <link> patch is re-applied to
+  site/index.html (scripts/spectral_patch.py), since that file is
+  upstream-owned and the overlay restores the unpatched version.
 
 Everything else is made to match upstream exactly, including deleting files
 upstream removed. Exits 0 with no commit when already in sync.
@@ -23,7 +28,8 @@ import sys
 REPO_ID = os.environ.get("HF_SPACE_ID", "mishig/feynman-interactive")
 
 # Paths (repo-relative) that belong to this mirror and must never be
-# overwritten by upstream content.
+# overwritten by upstream content. Entries are exact paths or directory
+# prefixes: "scripts" keeps scripts/*, "site/fonts" keeps site/fonts/*.
 KEEP = {
     ".git",
     ".github",
@@ -32,9 +38,19 @@ KEEP = {
     "MIRROR.md",
     ".gitignore",
     ".gitattributes",
+    "site/spectral.css",
+    "site/fonts",
 }
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+sys.path.insert(0, os.path.join(ROOT, "scripts"))
+from spectral_patch import apply_patch  # noqa: E402
+
+
+def kept(rel: str) -> bool:
+    rel = rel.replace(os.sep, "/")
+    return any(rel == k or rel.startswith(k + "/") for k in KEEP)
 
 
 def run(*args: str) -> str:
@@ -62,8 +78,7 @@ def main() -> int:
     print(f"sync: upstream snapshot has {len(upstream)} files.")
 
     for rel in sorted(upstream):
-        top = rel.split(os.sep)[0]
-        if top in KEEP or rel in KEEP:
+        if kept(rel):
             continue
         src = os.path.join(snapshot_dir, rel)
         dst = os.path.join(ROOT, rel)
@@ -75,8 +90,7 @@ def main() -> int:
     upstream_norm = {p.replace(os.sep, "/") for p in upstream}
     removed = 0
     for rel in tracked:
-        top = rel.split("/")[0]
-        if top in KEEP or rel in KEEP:
+        if kept(rel):
             continue
         if rel not in upstream_norm:
             path = os.path.join(ROOT, rel)
@@ -85,6 +99,9 @@ def main() -> int:
                 removed += 1
     if removed:
         print(f"sync: removed {removed} file(s) deleted upstream.")
+
+    # Re-apply mirror theming: the overlay restored upstream's index.html.
+    apply_patch()
 
     run("git", "add", "-A")
     status = run("git", "status", "--porcelain")

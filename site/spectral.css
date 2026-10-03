@@ -1,0 +1,68 @@
+/* Spectral theming for the feynman-interactive mirror.
+ *
+ * Mirror-owned override stylesheet, loaded AFTER the upstream bundle CSS
+ * (see scripts/spectral_patch.py, which injects the <link> into
+ * site/index.html). Self-hosted Spectral files live in /fonts/.
+ *
+ * Scope: all site text EXCEPT math. KaTeX elements carry their own explicit
+ * font-family stacks, and PDF.js internals / the signature handwriting input
+ * / form-comb monospace are deliberately left alone.
+ */
+
+@font-face {
+  font-family: "Spectral";
+  font-style: normal;
+  font-weight: 300;
+  font-display: swap;
+  src: url("/fonts/Spectral-Light.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Spectral";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("/fonts/Spectral-Regular.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Spectral";
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("/fonts/Spectral-Medium.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Spectral";
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("/fonts/Spectral-SemiBold.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Spectral";
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("/fonts/Spectral-Bold.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Spectral";
+  font-style: italic;
+  font-weight: 400;
+  font-display: swap;
+  src: url("/fonts/Spectral-Italic.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Spectral";
+  font-style: italic;
+  font-weight: 500;
+  font-display: swap;
+  src: url("/fonts/Spectral-MediumItalic.woff2") format("woff2");
+}
+
+/* The bundle themes everything through these two variables (body text via
+ * --ui, brand / demo notes / canvas labels / reader prose via --serif), so
+ * overriding them here retypes the whole site in one place. */
+:root {
+  --ui: "Spectral", "Iowan Old Style", Palatino, Georgia, serif;
+  --serif: "Spectral", "Iowan Old Style", Palatino, Georgia, serif;
+}

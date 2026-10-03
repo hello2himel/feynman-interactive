@@ -39,6 +39,21 @@ Or one click (replace `<user>` after forking):
 
 [![Deploy to Netlify](https://www.netlify.com/img/deploy/button.svg)](https://app.netlify.com/start/deploy?repository=https://github.com/hello2himel/feynman-interactive)
 
+## Theming: Spectral typeface
+
+The whole site is set in the **Spectral** serif family (self-hosted woff2 in
+`site/fonts/`, latin subsets only, ~160 KB total), except math: KaTeX keeps
+its own fonts, and PDF.js internals / the signature handwriting input / form
+monospace are untouched.
+
+How it works: the bundle themes everything through the `--ui` and `--serif`
+CSS variables, so the mirror-owned `site/spectral.css` (loaded after the
+bundle CSS) just redefines those two variables plus `@font-face` rules.
+`site/index.html` is upstream-owned and gets clobbered on every sync, so the
+`<link>` injection is an idempotent patch (`scripts/spectral_patch.py`)
+re-applied by the sync workflow and by the Netlify build — never a one-time
+edit.
+
 ## Local preview
 
 ```bash
@@ -59,7 +74,10 @@ This is a third-party mirror. A scheduled workflow
 (`.github/workflows/sync-from-hf.yml`, every 12 h + manual dispatch)
 downloads the current upstream Space snapshot and overlays it here, preserving
 mirror-only files (`netlify.toml`, `scripts/`, `.github/`, `MIRROR.md`,
-`.gitignore`, `.gitattributes`). It never pushes anything to Hugging Face.
+`.gitignore`, `.gitattributes`, `site/spectral.css`, `site/fonts/`).
+It never pushes anything to Hugging Face. After overlaying, the Spectral
+`<link>` patch is re-applied to the upstream-owned `site/index.html`
+(`scripts/spectral_patch.py`), so theming survives syncs.
 
 Run a sync manually any time:
 
@@ -77,5 +95,7 @@ git push
   committed as regular files (upstream keeps them in Git LFS/Xet) so Netlify
   serves them with no extra setup. See `.gitattributes`.
 - Upstream files (`README.md`, `Dockerfile`, `serve.py`, `extract_pdf.py`,
-  `site/`) are verbatim copies and get overwritten on each sync. Mirror docs
-  live in this file so they survive syncs.
+  `site/`) are verbatim copies and get overwritten on each sync — except
+  `site/index.html`, which additionally carries the one-line Spectral
+  stylesheet `<link>` (re-applied automatically after every sync, see above).
+  Mirror docs live in this file so they survive syncs.

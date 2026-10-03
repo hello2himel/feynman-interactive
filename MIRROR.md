@@ -53,10 +53,22 @@ How it works: the bundle themes itself through CSS variables (`--paper`,
 `--ink`, `--rule`, `--ui`, `--serif`), so the mirror-owned `site/theme.css`
 (loaded after the bundle CSS) redefines the palette + type stacks and
 restyles the header, buttons, demo headings, data table, quiz card, reader
-and dialogs. `site/index.html` is upstream-owned and gets clobbered on every
-sync, so the `<link>` injection is an idempotent patch
-(`scripts/theme_patch.py`) re-applied by the sync workflow and by the
-Netlify build — never a one-time edit.
+and dialogs. `site/theme.js` (loaded in `<head>`) pins the theme before
+first paint and wires the header toggle.
+
+**Theme toggle:** follows the OS by default; the header button cycles
+System → Light → Dark (persisted in `localStorage`). Dark mode inverts the
+scanned PDF pages too (`.pdfViewer .page canvas` filter).
+
+**Info dialog:** the header `i` button keeps the upstream keyboard shortcuts
+and appends a mirror-owned section (about, reading guide, theme, book file,
+links).
+
+`site/index.html` is upstream-owned and gets clobbered on every sync, so all
+of the above are idempotent patches (`scripts/theme_patch.py`) re-applied by
+the sync workflow and by the Netlify build — never one-time edits. The same
+goes for `README.md`: upstream's text stays verbatim and the mirror footer
+(`scripts/readme_footer.md`) is re-appended after every sync.
 
 ## Local preview
 
@@ -98,8 +110,9 @@ git push
 - **Binaries:** `site/pdfjs/wasm/*.wasm` and the LiberationSans fonts are
   committed as regular files (upstream keeps them in Git LFS/Xet) so Netlify
   serves them with no extra setup. See `.gitattributes`.
-- Upstream files (`README.md`, `Dockerfile`, `serve.py`, `extract_pdf.py`,
-  `site/`) are verbatim copies and get overwritten on each sync — except
-  `site/index.html`, which additionally carries the one-line theme
-  stylesheet `<link>` (re-applied automatically after every sync, see above).
+- Upstream files (`Dockerfile`, `serve.py`, `extract_pdf.py`, `site/`) are
+  verbatim copies and get overwritten on each sync — except
+  `site/index.html`, which additionally carries the theme patches
+  (re-applied automatically after every sync, see above). `README.md` keeps
+  the upstream text verbatim plus the auto-appended mirror footer.
   Mirror docs live in this file so they survive syncs.

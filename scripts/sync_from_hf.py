@@ -6,11 +6,11 @@ overlays it onto this repo, preserving mirror-specific files:
 
   kept as-is: .git/, .github/, netlify.toml, scripts/, MIRROR.md,
               .gitignore, .gitattributes (mirror stores wasm/fonts without LFS),
-              site/theme.css, site/fonts/ (mirror theming)
+              site/theme.css, site/theme.js, site/fonts/ (mirror theming)
 
-  After overlaying, the theme <link> patch is re-applied to
-  site/index.html (scripts/theme_patch.py), since that file is
-  upstream-owned and the overlay restores the unpatched version.
+  After overlaying, the theme patches are re-applied to the upstream-owned
+  site/index.html (scripts/theme_patch.py) and the mirror footer is
+  (re-)appended to the upstream-owned README.md (scripts/readme_footer.md).
 
 Everything else is made to match upstream exactly, including deleting files
 upstream removed. Exits 0 with no commit when already in sync.
@@ -39,6 +39,7 @@ KEEP = {
     ".gitignore",
     ".gitattributes",
     "site/theme.css",
+    "site/theme.js",
     "site/fonts",
 }
 
@@ -46,6 +47,8 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 sys.path.insert(0, os.path.join(ROOT, "scripts"))
 from theme_patch import apply_patch  # noqa: E402
+
+README_MARKER = "<!-- MIRROR-README -->"
 
 
 def kept(rel: str) -> bool:
@@ -68,6 +71,22 @@ def snapshot_files(snapshot_dir: str) -> set[str]:
             full = os.path.join(dirpath, name)
             files.add(os.path.relpath(full, snapshot_dir))
     return files
+
+
+def ensure_readme_footer() -> None:
+    """Append the mirror footer to README.md (idempotent via marker)."""
+    readme = os.path.join(ROOT, "README.md")
+    with open(readme) as f:
+        text = f.read()
+    if README_MARKER in text:
+        return
+    with open(os.path.join(ROOT, "scripts", "readme_footer.md")) as f:
+        footer = f.read()
+    if not text.endswith("\n"):
+        text += "\n"
+    with open(readme, "w") as f:
+        f.write(text + footer)
+    print("sync: appended mirror footer to README.md")
 
 
 def main() -> int:
@@ -100,8 +119,10 @@ def main() -> int:
     if removed:
         print(f"sync: removed {removed} file(s) deleted upstream.")
 
-    # Re-apply mirror theming: the overlay restored upstream's index.html.
+    # Re-apply mirror patches: the overlay restored upstream's index.html,
+    # and README.md needs the mirror footer (re-)appended.
     apply_patch()
+    ensure_readme_footer()
 
     run("git", "add", "-A")
     status = run("git", "status", "--porcelain")

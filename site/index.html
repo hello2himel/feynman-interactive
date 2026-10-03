@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Feynman Vol. I · Interactive</title>
     <script type="module" crossorigin src="/assets/index-xO6QomFj.js"></script>
+    <script src="/theme.js"></script>
     <link rel="stylesheet" crossorigin href="/assets/index-ewuw3MON.css">
     <link rel="stylesheet" href="/theme.css" />
   </head>
@@ -16,7 +17,8 @@
       <div class="spacer"></div>
       <span id="pagelabel" class="muted"></span>
       <button id="hold" aria-pressed="false" title="Keep the current demo while you scroll (H)">Hold demo</button>
-      <button id="help-btn" title="Keyboard shortcuts">?</button>
+      <button id="theme" title="Colour theme: follows your system. Activate to pin Light or Dark.">◐ System</button>
+      <button id="help-btn" title="About this book &amp; keyboard shortcuts">i</button>
     </header>
 
     <main class="split">
@@ -65,6 +67,29 @@
         <dt>Drag / scroll on demo</dt><dd>Pan · zoom (2D) or orbit · zoom (3D)</dd>
       </dl>
       <p class="muted">The marks in the left margin of the pages show where a demo changes. Click one to jump there.</p>
+      <div id="mirror-info">
+        <h4>About this book</h4>
+        <p>Chapters 1&ndash;14 of the <em>Feynman Lectures on Physics</em>, Vol. I, with
+        scroll-synced wireframe demos. The left pane runs the demo for whatever you are
+        reading; the right pane is the book itself.</p>
+        <h4>Reading with the demos</h4>
+        <p>Scroll the book and the demo follows each marked point &mdash; <em>J</em> /
+        <em>K</em> jump between them. <em>Hold</em> pins the current demo while you scroll.
+        Drag the demo to orbit or zoom; its sliders rewrite the scene, and
+        <em>Back to text values</em> restores what the text describes.</p>
+        <h4>Light &amp; dark</h4>
+        <p>The pages follow your system theme. Use the header control to pin
+        <em>Light</em> or <em>Dark</em>; dark mode inverts the scanned pages and the demo canvas too.</p>
+        <h4>The book file</h4>
+        <p>The page scans come from your own PDF and are not included here for copyright
+        reasons. On a self-hosted copy, extract them with
+        <code>python3 extract_pdf.py</code> &mdash; see the README.</p>
+        <h4>Elsewhere</h4>
+        <p>Upstream Space:
+        <a href="https://huggingface.co/spaces/mishig/feynman-interactive">mishig/feynman-interactive</a><br />
+        This mirror:
+        <a href="https://github.com/hello2himel/feynman-interactive">hello2himel/feynman-interactive</a></p>
+      </div>
       <form method="dialog"><button>Close</button></form>
     </dialog>
 

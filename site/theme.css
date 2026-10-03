@@ -548,8 +548,7 @@ a:focus-visible {
 
 .cue-mark:hover .tip,
 .cue-mark:focus-visible .tip,
-.cue-mark:focus-within .tip,
-.cue-mark.active .tip {
+.cue-mark:focus-within .tip {
   display: block;
 }
 

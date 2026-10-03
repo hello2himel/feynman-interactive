@@ -1798,7 +1798,9 @@ body[data-mview="lab"] #reader {
   }
 
   body[data-mview="lab"] #stage {
-    min-height: calc(100svh - 140px);
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
     display: flex;
     flex-direction: column;
   }
@@ -1819,6 +1821,9 @@ body[data-mview="lab"] #reader {
   body[data-mview="lab"] #stage {
     width: 100% !important;
     min-width: 0;
+    height: 100%;
+    min-height: 0;
+    overflow-y: auto;
   }
 
   /* modes live in the header on desktop: joined segmented group */

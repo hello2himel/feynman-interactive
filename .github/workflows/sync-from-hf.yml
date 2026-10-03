@@ -1,0 +1,46 @@
+# Sync from Hugging Face Space (upstream -> this mirror)
+#
+# The upstream Space (mishig/feynman-interactive) is owned by someone else.
+# This workflow pulls its changes into this GitHub mirror on a schedule
+# (every 12 hours) and on manual dispatch. It never pushes to Hugging Face.
+
+name: sync-from-hf
+
+on:
+  schedule:
+    - cron: "0 */12 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install sync dependencies
+        run: pip install -q huggingface_hub hf_xet
+
+      - name: Configure git identity
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Sync from upstream Space
+        run: python3 scripts/sync_from_hf.py
+
+      - name: Push if changed
+        run: |
+          if git log --oneline -1 | grep -q "Sync from Hugging Face Space"; then
+            git push
+          else
+            echo "No upstream changes, nothing to push."
+          fi

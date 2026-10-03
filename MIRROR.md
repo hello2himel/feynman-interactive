@@ -57,8 +57,9 @@ and dialogs. `site/theme.js` (loaded in `<head>`) pins the theme before
 first paint and wires the header toggle.
 
 **Theme toggle:** follows the OS by default; the header button cycles
-System → Light → Dark (persisted in `localStorage`). Dark mode inverts the
-scanned PDF pages too (`.pdfViewer .page canvas` filter).
+System → Light → Dark (persisted in `localStorage`). Dark mode reprints the
+scanned PDF pages (`#column .page canvas`) and the demo canvas into the dark
+paper tones via a computed filter chain.
 
 **Info dialog:** the header `i` button keeps the upstream keyboard shortcuts
 and appends a mirror-owned section (about, reading guide, theme, book file,

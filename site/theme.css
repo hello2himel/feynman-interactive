@@ -90,17 +90,20 @@
   color-scheme: dark;
 }
 
-/* The book follows the theme forcefully: scanned pages are bitmaps, so the
- * rendered page canvas is inverted into a dark page in every dark context.
- * The demo canvas gets the same treatment so the simulation stays readable
- * on dark paper. */
-:root[data-theme="dark"] :is(.pdfViewer .page canvas, #canvas-wrap canvas) {
-  filter: invert(1) hue-rotate(180deg);
+/* The book follows the theme forcefully: the reader renders each page into
+ * #column .page .clip > canvas (custom lightweight viewer, not the
+ * .pdfViewer container), so the page bitmap is reprinted into the dark paper
+ * tones in every dark context. The chain below maps paper-white to
+ * #1a1712-ish and ink-black to warm cream (computed, not eyeballed);
+ * hue-rotate keeps coloured figures truthful. The demo canvas gets the same
+ * treatment so the simulation stays readable on dark paper. */
+:root[data-theme="dark"] :is(#column .page canvas, #canvas-wrap canvas) {
+  filter: invert(0.91) hue-rotate(180deg) sepia(0.4) brightness(0.94);
 }
 
 @media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) :is(.pdfViewer .page canvas, #canvas-wrap canvas) {
-    filter: invert(1) hue-rotate(180deg);
+  :root:not([data-theme="light"]) :is(#column .page canvas, #canvas-wrap canvas) {
+    filter: invert(0.91) hue-rotate(180deg) sepia(0.4) brightness(0.94);
   }
 }
 

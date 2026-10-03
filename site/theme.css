@@ -1799,7 +1799,7 @@ body[data-mview="lab"] #reader {
 
   /* modes live in the header on desktop: joined segmented group */
   header.bar > #m-modes {
-    position: static;
+    position: relative;
     transform: none;
     display: flex;
     gap: 0;

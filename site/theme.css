@@ -1230,7 +1230,6 @@ button svg.ri:not(:last-child) {
   #m-modes .dd-opt[data-val="split"] {
     display: none;
   }
-}
 
   #canvas-wrap {
     aspect-ratio: 4 / 3;
